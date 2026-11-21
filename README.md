@@ -1,6 +1,8 @@
 # Okno na świat
 
-**Akwarium za szybą** (`index.html`): ekran jako przednia szyba akwarium w prawdziwym 3D (Three.js). Kamera śledzi oczy, więc perspektywa zmienia się jak przez szybę. Dłoń przed ekranem (MediaPipe Hand Landmarker): złącz kciuk z palcem wskazującym i pocieraj, a z góry sypie się karma, do której podpływają ryby. Bez kamery: dotknij ekranu. Światło: kaustyki, promienie i mgła wodna podpatrzone w [Abyssal Garden](https://github.com/Noniv/abyssal-garden) (MIT).
+**Akwarium** (`index.html`): żywe akwarium 3D w stylu Tamagotchi. Ryby głodnieją, woda się brudzi, na szybie rosną glony, a nocą (22–7) gaśnie światło i ryby śpią. Stan zapisuje się w przeglądarce i płynie dalej, gdy strona jest zamknięta (do 7 dni). Zaniedbane ryby chorują, a zadbane platki rodzą młode, które rosną. Każda ryba ma imię, wiek i samopoczucie (stuknij ją).
+
+Narzędzia: Karma (przytrzymaj palec w wodzie), Gąbka (zetrzyj glony z szyby), Woda (podmiana), Światło (auto/wł./wył.), Dłoń (opcjonalnie: karmienie gestem przed kamerą, MediaPipe Hand Landmarker). Przycisk „czas ×1” przyspiesza czas do testów (×60, ×600). Światło i kaustyki podpatrzone w [Abyssal Garden](https://github.com/Noniv/abyssal-garden) (MIT).
 
 **Okno na Alpy** (`okno.html`): poprzednia wersja z panoramą tyrolską.
 

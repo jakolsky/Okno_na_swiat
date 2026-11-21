@@ -3,71 +3,110 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Akwarium za szybą</title>
+<title>Akwarium – opiekuj się rybkami</title>
 <style>
 /*
-VOICE: cisza pod wodą, spokojne światło, odrobina zabawy przy karmieniu
-IDEA: ekran jako przednia szyba akwarium; głowa zmienia perspektywę, dłoń sypie karmę
-PICTURE: piasek, kamienie, falujące rośliny, ławica neonków, promienie światła i kaustyki
-COLOUR and TYPE: morska zieleń i turkus, ciepła karma; Fraunces + Barlow
-LAYOUT: pełny ekran, podpowiedź u góry, podgląd kamery w rogu
+VOICE: ciepły, opiekuńczy, odrobina zabawy; jak Tamagotchi, ale spokojne
+IDEA: żywe akwarium, które dzieje się także, gdy cię nie ma
+PICTURE: zbiornik 3D z rybami; na szybie rosną glony, woda mętnieje, nocą gaśnie światło
+COLOUR and TYPE: morska zieleń i turkus, ciepła karma i złoto przycisków; Fraunces + Barlow
+LAYOUT: stan zbiornika w lewym górnym rogu, narzędzia na dole, karta ryby po stuknięciu
 */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Barlow:wght@400;600&display=swap');
-:root{--ink:#eaf8f6;--gold:#f6c632}
+:root{--ink:#eaf8f6;--gold:#f6c632;--panel:#04191dcc;--warn:#ff7a5c;--ok:#5fd39a}
 *{box-sizing:border-box;margin:0}
 html,body{height:100%;background:#031a1f;color:var(--ink);overflow:hidden;font:16px/1.45 Barlow,system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
 #gl{position:fixed;inset:0;width:100%;height:100%;display:block}
-#sheen{position:fixed;inset:-20%;pointer-events:none;background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.06) 48%,transparent 54%);will-change:transform}
-.top{position:fixed;left:0;right:0;top:0;padding:max(14px,env(safe-area-inset-top)) 16px 0;text-align:center;pointer-events:none}
-#hint{font:600 18px/1.25 Fraunces,serif;text-shadow:0 1px 10px #000c;transition:opacity 1s;max-width:520px;margin:0 auto}
-#status{font-size:13px;margin-top:4px;text-shadow:0 1px 6px #000c}
-.chips{position:fixed;left:12px;bottom:max(64px,calc(env(safe-area-inset-bottom) + 58px));display:flex;flex-direction:column;gap:6px;pointer-events:none}
-.chip{font:600 13px Barlow,sans-serif;padding:4px 10px;border-radius:14px;background:#00000070;border:1px solid #ffffff25;opacity:.55;transition:all .2s;width:max-content}
-.chip.on{opacity:1;background:var(--gold);color:#102226;border-color:var(--gold)}
-#dirBtn{position:fixed;left:12px;bottom:max(12px,env(safe-area-inset-bottom));min-height:40px;padding:0 14px;border-radius:20px;border:1px solid #ffffff50;background:#00000060;color:var(--ink);font:600 14px Barlow,sans-serif;display:none}
-#pv{position:fixed;right:12px;bottom:max(12px,env(safe-area-inset-bottom));width:120px;height:auto;border-radius:12px;border:3px solid #777;display:none;background:#000;transition:border-color .2s,opacity .2s}
-#pv.ok{border-color:#4cd07d}#pv.no{border-color:#e0352b}
+#algae{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;filter:blur(3px)}
+#sheen{position:fixed;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.05) 47%,transparent 54%)}
+#ring{position:fixed;left:0;top:0;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;border:2px solid var(--gold);box-shadow:0 0 12px #f6c63288;pointer-events:none;display:none}
 #cursor{position:fixed;left:0;top:0;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:2px solid #ffe7a8;box-shadow:0 0 14px #ffd46a;pointer-events:none;opacity:0;transition:width .12s,height .12s,margin .12s,opacity .3s}
 #cursor.pinch{width:22px;height:22px;margin:-11px 0 0 -11px;background:#ffd46a55}
-.screen{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:#031a1fe6;overflow:auto}
-.card{max-width:420px;text-align:center}
-h1{font:600 44px/1.05 Fraunces,serif;margin-bottom:12px}
-.card p{opacity:.9;margin-bottom:12px}
-.card ul{text-align:left;margin:0 auto 18px;padding-left:20px;opacity:.88;font-size:15px}
-.btn{min-height:52px;padding:0 26px;border:0;border-radius:26px;background:var(--gold);color:#102226;font:600 18px Barlow,sans-serif;cursor:pointer;margin:4px}
-.btn.ghost{background:transparent;color:var(--ink);border:1px solid #ffffff55;font-size:16px}
-.btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
-.row{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:14px;font-size:14px;opacity:.85}
-input[type=range]{width:150px;accent-color:var(--gold)}
-#msg{color:var(--gold);font-size:14px;min-height:20px;margin-top:10px}
-.small{font-size:13px;opacity:.6;margin-top:12px}
-.small a{color:inherit}
+#cursor.sponge{border-color:#bff3c8;box-shadow:0 0 10px #9fe7b0;width:70px;height:70px;margin:-35px 0 0 -35px}
+
+.stats{position:fixed;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));width:min(230px,52vw);padding:10px 12px;border-radius:14px;background:var(--panel);backdrop-filter:blur(6px);border:1px solid #ffffff18}
+.stats h2{font:600 17px/1.1 Fraunces,serif;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.stats h2 small{font:600 12px Barlow,sans-serif;opacity:.7;white-space:nowrap}
+.bar{display:grid;grid-template-columns:76px 1fr;align-items:center;gap:6px;font-size:13px;margin-top:4px}
+.bar i{display:block;height:8px;border-radius:4px;background:#ffffff1c;overflow:hidden}
+.bar b{display:block;height:100%;border-radius:4px;background:var(--ok);transition:width .6s,background .6s}
+.bar.low b{background:var(--warn)}
+.speed{position:fixed;right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));min-height:36px;padding:0 12px;border-radius:18px;border:1px solid #ffffff40;background:var(--panel);color:var(--ink);font:600 13px Barlow,sans-serif}
+
+.tools{position:fixed;left:0;right:0;bottom:max(10px,env(safe-area-inset-bottom));display:flex;justify-content:center;gap:6px;padding:0 8px}
+.tool{flex:1 1 0;max-width:86px;min-height:56px;padding:6px 4px;border-radius:16px;border:1px solid #ffffff30;background:var(--panel);color:var(--ink);font:600 12px/1.1 Barlow,sans-serif;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;backdrop-filter:blur(6px)}
+.tool svg{width:22px;height:22px}
+.tool.on{background:var(--gold);color:#102226;border-color:var(--gold)}
+.tool:focus-visible,.speed:focus-visible{outline:3px solid #fff;outline-offset:2px}
+
+#toasts{position:fixed;left:50%;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 74px);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;width:min(92vw,420px)}
+.toast{background:#06262cee;border:1px solid #ffffff22;border-radius:12px;padding:8px 14px;font-size:14px;text-align:center;animation:tin .4s ease-out}
+.toast.good{border-color:var(--ok)}.toast.bad{border-color:var(--warn)}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}}
+
+.card{position:fixed;left:50%;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 74px);transform:translateX(-50%);width:min(92vw,340px);padding:14px 16px;border-radius:16px;background:#04191df2;border:1px solid #ffffff25;display:none}
+.card.show{display:block}
+.card input{width:100%;font:600 22px Fraunces,serif;background:transparent;border:0;border-bottom:1px dashed #ffffff55;color:var(--ink);padding:2px 0;margin-bottom:6px}
+.card input:focus{outline:none;border-bottom-color:var(--gold)}
+.card .meta{font-size:14px;opacity:.85;display:grid;grid-template-columns:auto 1fr;gap:2px 12px}
+.card .x{position:absolute;right:8px;top:6px;width:40px;height:40px;border:0;background:transparent;color:var(--ink);font-size:22px}
+
+.screen{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:#031a1fe8;overflow:auto}
+.intro{max-width:430px;text-align:center}
+.intro h1{font:600 42px/1.05 Fraunces,serif;margin-bottom:12px}
+.intro p{opacity:.9;margin-bottom:12px}
+.intro ul{text-align:left;margin:0 auto 18px;padding-left:20px;opacity:.88;font-size:15px}
+.btn{min-height:52px;padding:0 28px;border:0;border-radius:26px;background:var(--gold);color:#102226;font:600 18px Barlow,sans-serif;cursor:pointer}
+.small{font-size:13px;opacity:.6;margin-top:14px}.small a{color:inherit}
+#pv{position:fixed;right:10px;top:calc(max(10px,env(safe-area-inset-top)) + 46px);width:110px;border-radius:10px;border:2px solid #777;display:none;background:#000}
 .hidden{display:none!important}
 </style>
 </head>
 <body>
 <canvas id="gl"></canvas>
+<canvas id="algae"></canvas>
 <div id="sheen"></div>
+<div id="ring"></div>
 <div id="cursor"></div>
-<div class="top"><div id="hint">&nbsp;</div><div id="status"></div></div>
-<div class="chips hidden" id="chips"><span class="chip" id="chFace">twarz</span><span class="chip" id="chHand">dłoń</span><span class="chip" id="chPinch">szczypta</span></div>
+
+<div class="stats" aria-live="polite">
+  <h2><span id="title">Akwarium</span><small id="clock"></small></h2>
+  <div class="bar" id="bFood"><span>Najedzenie</span><i><b></b></i></div>
+  <div class="bar" id="bWater"><span>Woda</span><i><b></b></i></div>
+  <div class="bar" id="bGlass"><span>Szyba</span><i><b></b></i></div>
+  <div class="bar" id="bMood"><span>Nastrój</span><i><b></b></i></div>
+</div>
+<button class="speed" id="speed" title="Tempo upływu czasu w akwarium">czas ×1</button>
 <canvas id="pv" width="200" height="150"></canvas>
-<button id="dirBtn" aria-label="Odwróć kierunek perspektywy">⇄ kierunek</button>
+
+<div id="toasts"></div>
+<div class="card" id="card">
+  <button class="x" id="cardX" aria-label="Zamknij">×</button>
+  <input id="fName" maxlength="18" aria-label="Imię ryby">
+  <div class="meta" id="fMeta"></div>
+</div>
+
+<nav class="tools">
+  <button class="tool on" id="tFood"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="8" r="2"/><circle cx="13" cy="5" r="1.6"/><circle cx="16" cy="11" r="2.2"/><circle cx="9" cy="14" r="1.7"/><circle cx="14" cy="18" r="1.5"/></svg>Karma</button>
+  <button class="tool" id="tSponge"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="7" width="18" height="11" rx="3"/><circle cx="8" cy="11" r="1" fill="#000" opacity=".3"/><circle cx="13" cy="14" r="1" fill="#000" opacity=".3"/><circle cx="17" cy="10" r="1" fill="#000" opacity=".3"/></svg>Gąbka</button>
+  <button class="tool" id="tWater"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c3 4.5 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 3-6.5 6-11z"/></svg>Woda</button>
+  <button class="tool" id="tLight"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4.5"/><g stroke="currentColor" stroke-width="2"><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></g></svg><span id="lightLbl">auto</span></button>
+  <button class="tool" id="tHand"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 11V5.5a1.5 1.5 0 0 1 3 0V10h.5V4a1.5 1.5 0 0 1 3 0v6h.5V5.5a1.5 1.5 0 0 1 3 0V14c0 4-2.5 7-6.5 7-3 0-4.6-1.6-6-4l-2-3.4a1.4 1.4 0 0 1 2.3-1.6L8 13z"/></svg>Dłoń</button>
+</nav>
 
 <div class="screen" id="start">
-  <div class="card">
-    <h1>Akwarium za szybą</h1>
-    <p>Ekran staje się przednią szybą akwarium. Kamera śledzi twoje oczy, więc możesz zajrzeć w głąb i w rogi zbiornika, a ryby pływają w prawdziwym 3D.</p>
+  <div class="intro">
+    <h1>Twoje akwarium</h1>
+    <p>Ryby żyją także wtedy, gdy zamkniesz stronę. Głodnieją, woda się brudzi, a na szybie rosną glony. Zadbaj o nie, a zaczną się rozmnażać.</p>
     <ul>
-      <li>Ruszaj głową, żeby zajrzeć za kamienie i rośliny.</li>
-      <li>Unieś dłoń przed ekranem, złącz kciuk z palcem wskazującym i pocieraj palcami, a z góry posypie się karma.</li>
-      <li>Bez kamery: dotknij ekranu, żeby sypnąć karmę.</li>
+      <li><b>Karma:</b> przytrzymaj palec w wodzie i sypnij. Za dużo karmy gnije na dnie i psuje wodę.</li>
+      <li><b>Gąbka:</b> zetrzyj palcem glony z szyby.</li>
+      <li><b>Woda:</b> podmień ją, gdy zrobi się mętna.</li>
+      <li><b>Stuknij rybę</b>, żeby zobaczyć jej imię, wiek i samopoczucie. Imię możesz zmienić.</li>
+      <li>Nocą (22–7) światło gaśnie i ryby śpią.</li>
     </ul>
-    <button class="btn" id="go">Otwórz akwarium</button>
-    <button class="btn ghost" id="goNo">Bez kamery</button>
-    <div class="row">Siła głębi <input type="range" id="gain" min="0.5" max="2.5" step="0.1" value="1.2"></div>
-    <div id="msg"></div>
-    <p class="small">Obraz z kamery jest analizowany tylko na tym urządzeniu. Nic nie jest wysyłane ani zapisywane. Poprzednia wersja: <a href="okno.html">okno na Alpy</a>.</p>
+    <button class="btn" id="go">Zajrzyj do akwarium</button>
+    <p class="small">Stan zapisuje się tylko w tej przeglądarce. Kamera włącza się wyłącznie po wybraniu „Dłoń” i obraz nie opuszcza urządzenia. <a href="okno.html">Okno na Alpy</a></p>
   </div>
 </div>
 
@@ -76,40 +115,94 @@ import * as THREE from './vendor/three.module.min.js';
 {
 const $ = id => document.getElementById(id);
 const MP = new URL('./mediapipe', location.href).href;
-const FACE = new URL('./model/face_landmarker.task', location.href).href;
 const HAND = new URL('./model/hand_landmarker.task', location.href).href;
+const H1 = 3600, DAY = 86400;
 
-// ---------- wymiary fizyczne (cm): ekran to szyba z=0, zbiornik za nią ----------
+// ================= stan gry (zapisywany) =================
+const NAMES = ['Pestka','Iskra','Bąbel','Gucio','Mańka','Rudy','Kropka','Zefir','Plusk','Fiona','Figa','Groszek','Lusia','Tygrys','Mela','Szprotka','Kajtek','Nugat','Cynamon','Wafel','Perła','Sznurek','Borys','Klara','Tosia','Okruch','Fasolka','Miś','Bursztyn','Iga','Kluska','Brzoskwinia','Śledzik','Gaja','Leon','Mimi'];
+const SPECIES = {
+  neon:  {label:'Neonek', len:.26,  speed:1.5, school:1, cap:40, eat:10},
+  platy: {label:'Platka', len:.4, speed:1.1, school:0, cap:30, eat:7},
+  angel: {label:'Skalar', len:.55, speed:.7,  school:0, cap:6,  eat:5},
+};
+const KEY = 'akwarium-v1';
+let S, gameNow, speed = 1, nextId = 1, fishReady = false;
+const pick = a => a[Math.floor(Math.random()*a.length)];
+function newFish(kind, born, size = 1){
+  const used = new Set(S ? S.fish.map(f => f.name) : []);
+  const free = NAMES.filter(n => !used.has(n));
+  return {id:nextId++, kind, name:free.length ? pick(free) : 'Rybka ' + nextId, born, hunger:30 + Math.random()*20, size, sick:false, starve:0};
+}
+function freshState(){
+  const now = Date.now();
+  S = {v:1, start:now, game:now, real:now, water:92, algae:.05, light:'auto', breedT:0, breedCD:4*H1, fish:[]};
+  for(let i=0;i<7;i++) S.fish.push(newFish('neon', now - DAY*(1 + Math.random()*20)));
+  for(let i=0;i<2;i++) S.fish.push(newFish('platy', now - DAY*(5 + Math.random()*20)));
+  S.fish.push(newFish('angel', now - DAY*30));
+  return S;
+}
+function load(){
+  try{ const raw = localStorage.getItem(KEY); if(raw){ S = JSON.parse(raw); nextId = Math.max(0, ...S.fish.map(f => f.id)) + 1; return; } }catch(e){}
+  freshState();
+}
+function save(){ S.real = Date.now(); S.game = gameNow; try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+load();
+gameNow = S.game;
+
+// ================= symulacja potrzeb =================
+const isNight = () => { if(S.light === 'on') return false; if(S.light === 'off') return true; const h = new Date().getHours(); return h >= 22 || h < 7; };
+const avgHunger = () => S.fish.length ? S.fish.reduce((a, f) => a + f.hunger, 0)/S.fish.length : 0;
+function mood(){ const sick = S.fish.filter(f => f.sick).length; return Math.max(0, Math.min(100, 100 - avgHunger()*.45 - (100 - S.water)*.45 - S.algae*30 - sick*8)); }
+const notified = {};
+function note(key, txt, kind = '', cond = true){ if(!cond){ notified[key] = false; return; } if(notified[key]) return; notified[key] = true; toast(txt, kind); }
+function simulate(sec, quiet = false){
+  const night = isNight();
+  for(const f of S.fish){
+    f.hunger = Math.min(100, f.hunger + sec*100/(12*H1)*(night ? .5 : 1));
+    f.starve = f.hunger >= 100 ? f.starve + sec : Math.max(0, f.starve - sec*2);
+    if(!f.sick && (f.starve > 12*H1 || S.water < 18)){ f.sick = true; if(!quiet) toast(`${f.name} źle się czuje. Nakarm ryby i zadbaj o wodę.`, 'bad'); }
+    else if(f.sick && f.hunger < 50 && S.water > 50){ f.sick = false; f.starve = 0; if(!quiet) toast(`${f.name} wraca do formy!`, 'good'); }
+    if(!f.sick && f.hunger < 60 && f.size < 1) f.size = Math.min(1, f.size + sec/(2*DAY)*.65);
+  }
+  S.water = Math.max(0, S.water - sec*100/(5*DAY)*(1 + S.fish.length/40));
+  S.algae = Math.min(1, S.algae + sec/(3*DAY)*(night ? .3 : 1)*(S.water < 50 ? 1.5 : 1));
+  const m = mood();
+  S.breedT = m > 72 ? S.breedT + sec : Math.max(0, S.breedT - sec);
+  S.breedCD = Math.max(0, S.breedCD - sec);
+  const platies = S.fish.filter(f => f.kind === 'platy' && f.size > .8 && !f.sick).length;
+  if(S.breedT > 2*H1 && S.breedCD <= 0 && platies >= 2 && S.fish.filter(f => f.kind === 'platy').length < SPECIES.platy.cap - 4){
+    const n = 2 + Math.floor(Math.random()*3), names = [];
+    for(let i=0;i<n;i++){ const f = newFish('platy', gameNow, .3); f.hunger = 20; S.fish.push(f); names.push(f.name); }
+    S.breedT = 0; S.breedCD = 10*H1;
+    if(!quiet) toast(`Urodziły się młode platki: ${names.join(', ')}!`, 'good'); if(fishReady) syncFish();
+  }
+}
+// czas, który minął, gdy strona była zamknięta (maks. 7 dni)
+{ let away = Math.min(7*DAY, Math.max(0, (Date.now() - S.real)/1000)); gameNow += away*1000; const before = S.fish.length;
+  while(away > 0){ const step = Math.min(600, away); simulate(step, true); away -= step; }
+  S.awayMsg = (Date.now() - S.real) > 30*60*1000 ? Math.round((Date.now() - S.real)/H1/1000) : 0; S.bornAway = S.fish.length - before; }
+
+// ================= scena 3D =================
 let W, H, cmpp, hw, hh, D, u, floorY, surfY, EZ;
-const eye = new THREE.Vector3(), eyeT = new THREE.Vector3();
-let gain = 1.2, dir = 1, tracking = false, lastFace = -1e9, lastHand = -1e9, camStage = '', dist = 45;
-
+const eye = new THREE.Vector3();
 const renderer = new THREE.WebGLRenderer({canvas:$('gl'), antialias:true});
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
-const scene = new THREE.Scene();
-scene.background = new THREE.Color('#04222a');
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#04222a');
 const camera = new THREE.PerspectiveCamera();
-camera.matrixAutoUpdate = true;
-
-const U = {time:{value:0}, cs:{value:1}, floor:{value:0}, hgt:{value:1}};
+const U = {time:{value:0}, cs:{value:1}, floor:{value:0}, hgt:{value:1}, ci:{value:1}};
 const CAUSTIC = `
-uniform float uTime; uniform float uCS; uniform float uFloor; uniform float uHgt;
+uniform float uTime; uniform float uCS; uniform float uFloor; uniform float uHgt; uniform float uCI;
 varying vec3 vW;
 float caustic(vec2 uv, float time){
   vec2 p = mod(uv*6.28318, 6.28318) - 250.0; vec2 i = p; float c = 1.0; float inten = .005;
-  for(int n = 0; n < 4; n++){
-    float t = time*(1.0 - (3.5/float(n + 1)));
+  for(int n = 0; n < 4; n++){ float t = time*(1.0 - (3.5/float(n + 1)));
     i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
-    c += 1.0/length(vec2(p.x/(sin(i.x + t)/inten), p.y/(cos(i.y + t)/inten)));
-  }
-  c /= 4.0; c = 1.17 - pow(c, 1.4);
-  return clamp(pow(abs(c), 8.0), 0.0, 1.0);
+    c += 1.0/length(vec2(p.x/(sin(i.x + t)/inten), p.y/(cos(i.y + t)/inten))); }
+  c /= 4.0; c = 1.17 - pow(c, 1.4); return clamp(pow(abs(c), 8.0), 0.0, 1.0);
 }`;
-// dokłada kaustyki (falujące światło spod powierzchni) do zwykłego materiału; opcjonalnie ruch wierzchołków
 function patch(mat, o = {}){
   mat.onBeforeCompile = sh => {
-    Object.assign(sh.uniforms, {uTime:U.time, uCS:U.cs, uFloor:U.floor, uHgt:U.hgt});
+    Object.assign(sh.uniforms, {uTime:U.time, uCS:U.cs, uFloor:U.floor, uHgt:U.hgt, uCI:U.ci});
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', `#include <common>\nuniform float uTime; varying vec3 vW;\n${o.vhead || ''}`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>\n${o.vert || ''}\n{ vec4 wp = vec4(transformed, 1.0);\n#ifdef USE_INSTANCING\n wp = instanceMatrix*wp;\n#endif\n vW = (modelMatrix*wp).xyz; }`);
@@ -117,14 +210,11 @@ function patch(mat, o = {}){
       .replace('#include <common>', `#include <common>\n${CAUSTIC}`)
       .replace('#include <fog_fragment>', `{ float h = clamp((vW.y - uFloor)/uHgt, 0.0, 1.0);
         float c = caustic(vW.xz*uCS + vec2(vW.y*uCS*.35), uTime*.55);
-        gl_FragColor.rgb += vec3(.55, .9, 1.0)*c*${(o.ci ?? .45).toFixed(2)}*(.35 + .65*h); }\n#include <fog_fragment>`);
+        gl_FragColor.rgb += vec3(.55, .9, 1.0)*c*${(o.ci ?? .45).toFixed(2)}*uCI*(.35 + .65*h); }\n#include <fog_fragment>`);
   };
   return mat;
 }
-
-// ---------- pomocnicze ----------
 let seed = 11; const rnd = () => (seed = (seed*16807) % 2147483647)/2147483647;
-const rr = (a, b) => a + (b - a)*Math.random();
 function noise3(x, y, z){ return Math.sin(x*1.7 + Math.sin(y*2.3))*.5 + Math.sin(y*1.3 + z*2.1)*.3 + Math.sin(z*2.9 + x*.7)*.2; }
 function bump(x, z){ return (Math.sin(x/u*1.3) + Math.sin(z/u*1.7 + x/u*.6) + .5*Math.sin(x/u*3.1 - z/u*2.3))*.06*u; }
 function mergeGeos(list){
@@ -135,28 +225,21 @@ function mergeGeos(list){
     for(let i = 0; i < p.length; i += 3){ pos.push(p[i], p[i+1], p[i+2]); nor.push(q[i], q[i+1], q[i+2]); const c = color(p[i], p[i+1], p[i+2]); col.push(c.r, c.g, c.b); }
   }
   const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
-  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   return g;
 }
 function canvasTex(w, h, paint){ const c = document.createElement('canvas'); c.width = w; c.height = h; paint(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; }
 
-// ---------- budowa zbiornika ----------
-let world = null, fishes = [], species = [], flakes, F = [], bubbles, B = [], rays = [], plantsMat;
+let world = null, hemi, sun, rays = [], bubbles, B = [], flakes, F = [];
+const mesh = {};
 function buildTank(){
   if(world) scene.remove(world);
-  world = new THREE.Group(); scene.add(world);
-  seed = 11;
+  world = new THREE.Group(); scene.add(world); seed = 11;
   floorY = -hh; surfY = hh - Math.min(hh*.14, u*.45);
   U.cs.value = .55/u; U.floor.value = floorY; U.hgt.value = surfY - floorY;
-  scene.fog = new THREE.Fog('#0d4650', EZ, EZ + D*3);   // mgła tylko w wodzie: liczona od szyby
-
-  // światło
-  world.add(new THREE.HemisphereLight('#bff3ff', '#2a4a44', 1.6));
-  const sun = new THREE.DirectionalLight('#fff1d6', 2.2); sun.position.set(u*.6, hh*4, u); world.add(sun);
-
-  // ściany zbiornika
+  scene.fog = new THREE.Fog('#0d4650', EZ, EZ + D*3);
+  hemi = new THREE.HemisphereLight('#bff3ff', '#2a4a44', 1.6); world.add(hemi);
+  sun = new THREE.DirectionalLight('#fff1d6', 2.2); sun.position.set(u*.6, hh*4, u); world.add(sun);
   const backTex = canvasTex(4, 256, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#3f8e95'); g.addColorStop(.5, '#17535d'); g.addColorStop(1, '#0b2f36'); x.fillStyle = g; x.fillRect(0, 0, w, h); });
   const wallMat = patch(new THREE.MeshStandardMaterial({map:backTex, roughness:1}), {ci:.18});
   const back = new THREE.Mesh(new THREE.PlaneGeometry(2*hw, 2*hh), wallMat); back.position.set(0, 0, -D); world.add(back);
@@ -164,83 +247,57 @@ function buildTank(){
   const l = new THREE.Mesh(side, wallMat); l.rotation.y = Math.PI/2; l.position.set(-hw, 0, -D/2); world.add(l);
   const r = new THREE.Mesh(side, wallMat); r.rotation.y = -Math.PI/2; r.position.set(hw, 0, -D/2); world.add(r);
   const lid = new THREE.Mesh(new THREE.PlaneGeometry(2*hw, D), new THREE.MeshStandardMaterial({color:'#0e2226', roughness:1})); lid.rotation.x = Math.PI/2; lid.position.set(0, hh, -D/2); world.add(lid);
-
-  // piasek z drobnym ziarnem
   const sandTex = canvasTex(512, 512, (x, w, h) => { x.fillStyle = '#c9b48a'; x.fillRect(0, 0, w, h); for(let i=0;i<26000;i++){ const v = 150 + Math.random()*90; x.fillStyle = `rgb(${v},${v*.9|0},${v*.7|0})`; x.fillRect(Math.random()*w, Math.random()*h, 1.4, 1.4); } });
   sandTex.wrapS = sandTex.wrapT = THREE.RepeatWrapping; sandTex.repeat.set(2*hw/(u*1.5), D/(u*1.5));
   const fg = new THREE.PlaneGeometry(2*hw, D, 60, 40); fg.rotateX(-Math.PI/2);
-  const fp = fg.attributes.position; for(let i=0;i<fp.count;i++){ const x = fp.getX(i), z = fp.getZ(i) - D/2; fp.setY(i, bump(x, z)); }
+  const fp = fg.attributes.position; for(let i=0;i<fp.count;i++) fp.setY(i, bump(fp.getX(i), fp.getZ(i) - D/2));
   fg.translate(0, floorY, -D/2); fg.computeVertexNormals();
   world.add(new THREE.Mesh(fg, patch(new THREE.MeshStandardMaterial({map:sandTex, roughness:.95}), {ci:.75})));
-
-  // kamyki
-  const peb = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), patch(new THREE.MeshStandardMaterial({roughness:.8}), {ci:.5}), 140);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s3 = new THREE.Vector3(), p3 = new THREE.Vector3(), c = new THREE.Color();
-  for(let i=0;i<140;i++){
-    const x = (rnd()*2 - 1)*hw*.95, z = -rnd()*D*.95 - .02*D, r0 = u*(.03 + rnd()*.06);
-    q.setFromEuler(new THREE.Euler(rnd()*3, rnd()*3, rnd()*3)); s3.set(r0, r0*.6, r0*.8); p3.set(x, floorY + bump(x, z + D/2 - D/2) + r0*.3, z);
-    peb.setMatrixAt(i, m4.compose(p3, q, s3)); peb.setColorAt(i, c.setHSL(.08 + rnd()*.05, .15 + rnd()*.2, .25 + rnd()*.4));
-  }
+  const peb = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), patch(new THREE.MeshStandardMaterial({roughness:.8}), {ci:.5}), 140);
+  for(let i=0;i<140;i++){ const x = (rnd()*2 - 1)*hw*.95, z = -rnd()*D*.95 - .02*D, r0 = u*(.03 + rnd()*.06);
+    q.setFromEuler(new THREE.Euler(rnd()*3, rnd()*3, rnd()*3)); s3.set(r0, r0*.6, r0*.8); p3.set(x, floorY + bump(x, z) + r0*.3, z);
+    peb.setMatrixAt(i, m4.compose(p3, q, s3)); peb.setColorAt(i, c.setHSL(.08 + rnd()*.05, .15 + rnd()*.2, .25 + rnd()*.4)); }
   world.add(peb);
-
-  // kamienie
-  const rockMat = patch(new THREE.MeshStandardMaterial({color:'#7d7468', roughness:.95, flatShading:false}), {ci:.6});
-  const rocks = [[-.55, .78, .5], [.6, .62, .4], [-.15, .9, .3], [.25, .35, .28], [-.8, .3, .25]];
-  for(const [fx, fz, fr] of rocks){
+  const rockMat = patch(new THREE.MeshStandardMaterial({color:'#7d7468', roughness:.95}), {ci:.6});
+  for(const [fx, fz, fr] of [[-.55, .78, .5], [.6, .62, .4], [-.15, .9, .3], [.25, .35, .28], [-.8, .3, .25]]){
     const g = new THREE.SphereGeometry(1, 56, 36), p = g.attributes.position, sd = rnd()*10;
-    for(let i=0;i<p.count;i++){ const v = new THREE.Vector3().fromBufferAttribute(p, i); const n = 1 + .28*noise3(v.x*1.6 + sd, v.y*1.6, v.z*1.6) + .08*noise3(v.x*5, v.y*5 + sd, v.z*5); v.multiplyScalar(n); p.setXYZ(i, v.x, v.y, v.z); }
+    for(let i=0;i<p.count;i++){ const v = new THREE.Vector3().fromBufferAttribute(p, i); v.multiplyScalar(1 + .28*noise3(v.x*1.6 + sd, v.y*1.6, v.z*1.6) + .08*noise3(v.x*5, v.y*5 + sd, v.z*5)); p.setXYZ(i, v.x, v.y, v.z); }
     g.computeVertexNormals();
-    const rk = new THREE.Mesh(g, rockMat), R = u*fr*1.5;
-    rk.scale.set(R*1.3, R*.85, R); rk.rotation.set(0, rnd()*6, rnd()*.4);
-    rk.position.set(fx*hw, floorY + R*.25, -fz*D); world.add(rk);
+    const rk = new THREE.Mesh(g, rockMat), R = u*fr*1.5; rk.scale.set(R*1.3, R*.85, R); rk.rotation.set(0, rnd()*6, rnd()*.4); rk.position.set(fx*hw, floorY + R*.25, -fz*D); world.add(rk);
   }
-
-  // rośliny: wstęgi falujące w prądzie (ruch liczony na karcie graficznej)
   const blade = new THREE.PlaneGeometry(1, 1, 2, 16); blade.translate(0, .5, 0);
   { const bp = blade.attributes.position, bc = []; for(let i=0;i<bp.count;i++){ const y = bp.getY(i); bp.setX(i, bp.getX(i)*(1 - .8*y)); bp.setZ(i, Math.abs(bp.getX(i))*.6); const v = .45 + .7*y; bc.push(v, v, v); } blade.setAttribute('color', new THREE.Float32BufferAttribute(bc, 3)); blade.computeVertexNormals(); }
-  plantsMat = patch(new THREE.MeshStandardMaterial({side:THREE.DoubleSide, roughness:.55, vertexColors:true}), {ci:.35,
+  const plantsMat = patch(new THREE.MeshStandardMaterial({side:THREE.DoubleSide, roughness:.55, vertexColors:true}), {ci:.35,
     vert:`float ph = instanceMatrix[3].x*2.1 + instanceMatrix[3].z*1.7; float k = pow(position.y, 1.6);
           transformed.x += sin(uTime*1.1 + ph + position.y*2.2)*.22*k; transformed.z += cos(uTime*.8 + ph*1.3 + position.y*1.7)*.15*k;`});
   const NP = 220, plants = new THREE.InstancedMesh(blade, plantsMat, NP);
   const clumps = [[-.85, .85], [-.6, .95], [.75, .9], [.9, .7], [.1, .97], [-.3, .6], [.45, .55], [-.95, .45], [.95, .3]];
-  for(let i=0;i<NP;i++){
-    const [cx, cz] = clumps[i % clumps.length], x = cx*hw + (rnd() - .5)*u*.5, z = -cz*D + (rnd() - .5)*u*.4;
+  for(let i=0;i<NP;i++){ const [cx, cz] = clumps[i % clumps.length], x = cx*hw + (rnd() - .5)*u*.5, z = -cz*D + (rnd() - .5)*u*.4;
     const tall = cz > .8 ? (surfY - floorY)*(.55 + rnd()*.4) : u*(.5 + rnd()*.9);
     q.setFromEuler(new THREE.Euler(0, rnd()*6, (rnd() - .5)*.25)); s3.set(u*(.05 + rnd()*.05), tall, u*.05); p3.set(x, floorY - u*.02, z);
-    plants.setMatrixAt(i, m4.compose(p3, q, s3)); plants.setColorAt(i, c.setHSL(.27 + rnd()*.1, .55 + rnd()*.3, .22 + rnd()*.2));
-  }
+    plants.setMatrixAt(i, m4.compose(p3, q, s3)); plants.setColorAt(i, c.setHSL(.27 + rnd()*.1, .55 + rnd()*.3, .22 + rnd()*.2)); }
   world.add(plants);
-
-  // powierzchnia wody od spodu
-  const sm = new THREE.ShaderMaterial({transparent:true, side:THREE.DoubleSide, depthWrite:false, uniforms:{uTime:U.time, uCS:U.cs, uFloor:U.floor, uHgt:U.hgt},
+  const sm = new THREE.ShaderMaterial({transparent:true, side:THREE.DoubleSide, depthWrite:false, uniforms:{uTime:U.time, uCS:U.cs, uFloor:U.floor, uHgt:U.hgt, uCI:U.ci},
     vertexShader:`varying vec3 vW; void main(){ vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
-    fragmentShader:`${CAUSTIC}\nvoid main(){ float c = caustic(vW.xz*uCS*1.3, uTime*.7); gl_FragColor = vec4(mix(vec3(.42,.78,.86), vec3(1.), c), .32 + c*.45); }`});
+    fragmentShader:`${CAUSTIC}\nvoid main(){ float c = caustic(vW.xz*uCS*1.3, uTime*.7)*uCI; gl_FragColor = vec4(mix(vec3(.42,.78,.86)*(.3 + .7*uCI), vec3(1.), c), .32 + c*.45); }`});
   const surf = new THREE.Mesh(new THREE.PlaneGeometry(2*hw, D), sm); surf.rotation.x = Math.PI/2; surf.position.set(0, surfY, -D/2); world.add(surf);
-
-  // promienie światła
   const rayTex = canvasTex(64, 256, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(255,255,255,.9)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); const g2 = x.createLinearGradient(0, 0, w, 0); g2.addColorStop(0, 'rgba(0,0,0,1)'); g2.addColorStop(.5, 'rgba(0,0,0,0)'); g2.addColorStop(1, 'rgba(0,0,0,1)'); x.globalCompositeOperation = 'destination-out'; x.fillStyle = g2; x.fillRect(0, 0, w, h); });
   rays = [];
-  for(let i=0;i<6;i++){
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(u*(.4 + rnd()*.8), surfY - floorY), new THREE.MeshBasicMaterial({map:rayTex, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, color:'#bdf3ff', opacity:.18, fog:false}));
-    m.position.set((rnd()*2 - 1)*hw*.8, (surfY + floorY)/2, -D*(.25 + rnd()*.7)); m.rotation.z = -.25 + rnd()*.15; m.userData.ph = rnd()*6;
-    world.add(m); rays.push(m);
-  }
-
-  // bąbelki z kamienia napowietrzającego
-  bubbles = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), new THREE.MeshStandardMaterial({color:'#e8fbff', roughness:.05, metalness:.1, transparent:true, opacity:.55, emissive:'#2a5a66'}), 60);
-  world.add(bubbles); B = [];
+  for(let i=0;i<6;i++){ const m = new THREE.Mesh(new THREE.PlaneGeometry(u*(.4 + rnd()*.8), surfY - floorY), new THREE.MeshBasicMaterial({map:rayTex, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, color:'#bdf3ff', opacity:.18, fog:false}));
+    m.position.set((rnd()*2 - 1)*hw*.8, (surfY + floorY)/2, -D*(.25 + rnd()*.7)); m.rotation.z = -.25 + rnd()*.15; m.userData.ph = rnd()*6; world.add(m); rays.push(m); }
+  bubbles = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), new THREE.MeshStandardMaterial({color:'#e8fbff', roughness:.05, metalness:.1, transparent:true, opacity:.55, emissive:'#2a5a66'}), 140);
+  bubbles.frustumCulled = false; world.add(bubbles); B = [];
   const air = new THREE.Vector3(hw*.78, floorY + u*.08, -D*.85);
   const stone = new THREE.Mesh(new THREE.CylinderGeometry(u*.12, u*.14, u*.12, 16), patch(new THREE.MeshStandardMaterial({color:'#5b5f63', roughness:.9}))); stone.position.copy(air); world.add(stone);
-  for(let i=0;i<60;i++) B.push({p:air.clone().add(new THREE.Vector3(0, rnd()*(surfY - floorY), 0)), r:u*(.015 + rnd()*.03), ph:rnd()*6, v:u*(1.2 + rnd()*.8), origin:air});
-
-  buildFish();
-  buildFlakes();
+  for(let i=0;i<140;i++) B.push({p:air.clone().add(new THREE.Vector3(0, rnd()*(surfY - floorY), 0)), r:u*(.015 + rnd()*.03), ph:rnd()*6, v:u*(1.2 + rnd()*.8), origin:air, burst:i >= 60, on:i < 60});
+  buildFishMeshes(); buildFlakes(); syncFish();
 }
 
 // ---------- ryby ----------
 function fishGeo(kind){
   const pts = [];
-  for(let i=0;i<=18;i++){ const t = i/18; const r = .035 + .15*Math.pow(Math.sin(Math.PI*Math.min(1, t*1.02)), .8)*(t < .12 ? t/.12*.7 + .3 : 1); pts.push(new THREE.Vector2(Math.max(.001, i === 18 ? .001 : r), t - .5)); }
+  for(let i=0;i<=18;i++){ const t = i/18; const r = .035 + .15*Math.pow(Math.sin(Math.PI*Math.min(1, t*1.02)), .8)*(t < .12 ? t/.12*.7 + .3 : 1); pts.push(new THREE.Vector2(i === 18 ? .001 : Math.max(.001, r), t - .5)); }
   const body = new THREE.LatheGeometry(pts, 16); body.rotateZ(-Math.PI/2);
   body.scale(1, kind === 'angel' ? 1.7 : kind === 'platy' ? 1.2 : 1, .46);
   const tri = a => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(a, 3)); return g; };
@@ -253,68 +310,77 @@ function fishGeo(kind){
   let bodyCol;
   if(kind === 'neon') bodyCol = (x, y) => y > -.005 && y < .07 && x > -.38 && x < .3 ? C(.53, 1, .55) : (y < -.005 && x < .08 && x > -.47 ? C(.99, .9, .5) : C(.12, .2, y > 0 ? .55 : .8));
   else if(kind === 'platy') bodyCol = (x, y) => C(.06 + y*.1, .95, .5 + y*.6);
-  else bodyCol = (x, y) => (Math.sin(x*28) > .55 ? C(.1, .3, .15) : C(.13, .25, .86 + y*.1));
+  else bodyCol = x => (Math.sin(x*28) > .55 ? C(.1, .3, .15) : C(.13, .25, .86));
   const finCol = kind === 'neon' ? () => C(.55, .2, .85) : kind === 'platy' ? () => C(.03, .9, .45) : () => C(.12, .3, .8);
   const black = () => new THREE.Color('#060606');
   return mergeGeos([{g:body, color:bodyCol}, {g:tail, color:finCol}, {g:dorsal, color:finCol}, {g:ventral, color:finCol}, {g:eyeL, color:black}, {g:eyeR, color:black}]);
 }
-function buildFish(){
-  species = [{kind:'neon', n:30, len:.2, speed:1.5, school:1}, {kind:'platy', n:6, len:.32, speed:1.1, school:0}, {kind:'angel', n:3, len:.45, speed:.7, school:0}];
-  fishes = [];
-  for(const sp of species){
-    const g = fishGeo(sp.kind);
-    g.setAttribute('aPhase', new THREE.InstancedBufferAttribute(new Float32Array(sp.n).map(() => Math.random()*6), 1));
-    g.setAttribute('aSpd', new THREE.InstancedBufferAttribute(new Float32Array(sp.n).fill(6), 1));
+function buildFishMeshes(){
+  for(const kind in SPECIES){
+    const cap = SPECIES[kind].cap, g = fishGeo(kind);
+    g.setAttribute('aPhase', new THREE.InstancedBufferAttribute(new Float32Array(cap).map(() => Math.random()*6), 1));
+    g.setAttribute('aSpd', new THREE.InstancedBufferAttribute(new Float32Array(cap).fill(6), 1));
     const mat = patch(new THREE.MeshStandardMaterial({vertexColors:true, roughness:.35, metalness:.15, side:THREE.DoubleSide}), {ci:.4,
       vhead:'attribute float aPhase; attribute float aSpd;',
       vert:`float tl = clamp(.2 - position.x, 0., 1.2); transformed.z += sin(uTime*aSpd + aPhase - position.x*5.5)*.13*tl*tl;`});
-    sp.mesh = new THREE.InstancedMesh(g, mat, sp.n); sp.mesh.frustumCulled = false; world.add(sp.mesh);
-    for(let i=0;i<sp.n;i++){
-      const f = {sp, i, p:new THREE.Vector3((Math.random()*2 - 1)*hw*.7, floorY + (surfY - floorY)*(.25 + Math.random()*.6), -D*(.2 + Math.random()*.7)),
-        v:new THREE.Vector3(Math.random() - .5, (Math.random() - .5)*.2, Math.random() - .5).setLength(u*.3), target:new THREE.Vector3(), tt:0, gulp:0, L:sp.len*u*(.85 + Math.random()*.3), notice:1.2 + Math.random()*2.3};   // notice: po ilu sekundach ryba zauważa karmę
-      fishes.push(f);
-    }
+    const m = new THREE.InstancedMesh(g, mat, cap); m.frustumCulled = false; m.count = 0;
+    for(let i=0;i<cap;i++) m.setColorAt(i, new THREE.Color(1, 1, 1));
+    mesh[kind] = m; world.add(m);
   }
 }
-const tmpV = new THREE.Vector3(), tmpA = new THREE.Vector3(), tmpM = new THREE.Matrix4(), tmpS = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
-function updateFish(dt, t){
+let swim = [];   // stan ruchu (pozycja/prędkość) dla każdej ryby ze stanu gry
+function syncFish(){
+  const old = new Map(swim.map(s => [s.f.id, s]));
+  swim = []; const cnt = {neon:0, platy:0, angel:0};
+  for(const f of S.fish){
+    let s = old.get(f.id);
+    if(!s) s = {f, p:new THREE.Vector3((Math.random()*2 - 1)*hw*.6, floorY + (surfY - floorY)*(.3 + Math.random()*.5), -D*(.25 + Math.random()*.6)), v:new THREE.Vector3(Math.random() - .5, 0, Math.random() - .5).setLength(u*.3), target:new THREE.Vector3(), tt:0, gulp:0, base:.88 + ((f.id*7919) % 100)/400, notice:1.2 + Math.random()*2.3};
+    s.f = f; s.idx = cnt[f.kind]++; swim.push(s);
+  }
+  for(const k in mesh) mesh[k].count = cnt[k];
+  fishReady = true;
+}
+const tmpV = new THREE.Vector3(), tmpA = new THREE.Vector3(), tmpM = new THREE.Matrix4(), tmpS = new THREE.Vector3(), upV = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
+function updateFish(dt, t, night){
   const mx = hw - u*.35, my0 = floorY + u*.35, my1 = surfY - u*.2, mz0 = -D + u*.35, mz1 = -u*.4;
   const center = new THREE.Vector3(), avgV = new THREE.Vector3(); let ns = 0;
-  for(const f of fishes) if(f.sp.school){ center.add(f.p); avgV.add(f.v); ns++; }
+  for(const s of swim) if(SPECIES[s.f.kind].school && !s.f.sick){ center.add(s.p); avgV.add(s.v); ns++; }
   if(ns){ center.divideScalar(ns); avgV.divideScalar(ns); }
-  for(const f of fishes){
-    const acc = tmpA.set(0, 0, 0), maxS = f.sp.speed*u;
-    // jedzenie: najbliższy płatek w zasięgu
+  for(const s of swim){
+    const f = s.f, sp = SPECIES[f.kind], L = sp.len*u*s.base*(.45 + .55*f.size);
+    const slow = f.sick ? .35 : night ? .35 : 1, maxS = sp.speed*u*slow, acc = tmpA.set(0, 0, 0);
     let best = null, bd = 1e9;
-    for(const k of F){ if(!k.alive || k.age < f.notice) continue; const d = k.p.distanceToSquared(f.p); if(d < bd){ bd = d; best = k; } }
-    const hungry = best && bd < (u*4.5)**2;
-    if(hungry){
-      acc.add(tmpV.copy(best.p).sub(f.p).setLength(maxS*3.5));
-      if(Math.sqrt(bd) < f.L*.5){ best.alive = false; f.gulp = 1; plop(); }
+    if(f.hunger > 8 && !night) for(const k of F){ if(!k.alive || k.age < s.notice) continue; const d = k.p.distanceToSquared(s.p); if(d < bd){ bd = d; best = k; } }
+    const chasing = best && bd < (u*4.5)**2;
+    if(chasing){
+      acc.add(tmpV.copy(best.p).sub(s.p).setLength(maxS*3.5));
+      if(Math.sqrt(bd) < L*.5){ best.alive = false; s.gulp = 1; f.hunger = Math.max(0, f.hunger - sp.eat); plop(); }
     } else {
-      if(t > f.tt || f.p.distanceTo(f.target) < u*.5){ f.target.set((Math.random()*2 - 1)*mx, my0 + Math.random()*(my1 - my0), mz0 + Math.random()*(mz1 - mz0)); f.tt = t + 3 + Math.random()*5; }
-      acc.add(tmpV.copy(f.target).sub(f.p).setLength(maxS*.8));
-      if(f.sp.school && ns){ acc.add(tmpV.copy(center).sub(f.p).multiplyScalar(.9)); acc.add(tmpV.copy(avgV).sub(f.v).multiplyScalar(.8)); }
-      // ciekawość: lekko podpływają do miejsca, z którego patrzysz
-      if(tracking && performance.now() - lastFace < 800) acc.add(tmpV.set(eye.x*.5, eye.y*.5, mz1).sub(f.p).setLength(maxS*.25));
+      if(t > s.tt || s.p.distanceTo(s.target) < u*.5){
+        if(night || f.sick) s.target.set((Math.random()*2 - 1)*mx*.8, my0 + Math.random()*(my1 - my0)*.25, mz0 + Math.random()*(mz1 - mz0)*.6);
+        else if(f.hunger > 70) s.target.set((Math.random()*2 - 1)*mx*.6, my1 - Math.random()*u*.6, mz1 - Math.random()*u*.6);   // głodne: proszą o jedzenie przy szybie
+        else s.target.set((Math.random()*2 - 1)*mx, my0 + Math.random()*(my1 - my0), mz0 + Math.random()*(mz1 - mz0));
+        s.tt = t + 3 + Math.random()*5;
+      }
+      acc.add(tmpV.copy(s.target).sub(s.p).setLength(maxS*.8));
+      if(sp.school && ns && !f.sick){ acc.add(tmpV.copy(center).sub(s.p).multiplyScalar(night ? .3 : .9)); acc.add(tmpV.copy(avgV).sub(s.v).multiplyScalar(.8)); }
     }
-    for(const g of fishes){ if(g === f) continue; const d = f.p.distanceTo(g.p); if(d < (f.L + g.L)*.6 && d > 0) acc.add(tmpV.copy(f.p).sub(g.p).setLength(maxS*2.5*(1 - d/((f.L + g.L)*.6)))); }
+    for(const o of swim){ if(o === s) continue; const d = s.p.distanceTo(o.p), lim = L*1.2; if(d < lim && d > 0) acc.add(tmpV.copy(s.p).sub(o.p).setLength(maxS*2.5*(1 - d/lim))); }
     const wall = (val, lo, hi, axis) => { if(val < lo) acc[axis] += (lo - val)*8; if(val > hi) acc[axis] -= (val - hi)*8; };
-    wall(f.p.x, -mx, mx, 'x'); wall(f.p.y, my0, my1, 'y'); wall(f.p.z, mz0, mz1, 'z');
-    f.v.addScaledVector(acc, dt);
-    f.v.y *= .96;
-    const lim = hungry ? maxS*1.8 : maxS; if(f.v.length() > lim) f.v.setLength(lim); if(f.v.length() < maxS*.15) f.v.setLength(maxS*.15);
-    f.p.addScaledVector(f.v, dt);
-    f.gulp = Math.max(0, f.gulp - dt*3);
-    // orientacja: oś x ryby wzdłuż prędkości
-    const fw = tmpV.copy(f.v).normalize(); fw.y = THREE.MathUtils.clamp(fw.y, -.6, .6); fw.normalize();
-    const right = new THREE.Vector3().crossVectors(fw, up).normalize(), u2 = new THREE.Vector3().crossVectors(right, fw);
-    const sc = f.L*(1 + f.gulp*.12);
-    tmpM.makeBasis(fw, u2, right); tmpM.scale(tmpS.set(sc, sc, sc)); tmpM.setPosition(f.p);
-    f.sp.mesh.setMatrixAt(f.i, tmpM);
-    f.sp.mesh.geometry.attributes.aSpd.array[f.i] = 4 + f.v.length()/u*5;
+    wall(s.p.x, -mx, mx, 'x'); wall(s.p.y, my0, my1, 'y'); wall(s.p.z, mz0, mz1, 'z');
+    s.v.addScaledVector(acc, dt); s.v.y *= .96;
+    const lim = chasing ? maxS*1.8 : maxS; if(s.v.length() > lim) s.v.setLength(lim); if(s.v.length() < maxS*.12) s.v.setLength(maxS*.12);
+    s.p.addScaledVector(s.v, dt); s.gulp = Math.max(0, s.gulp - dt*3);
+    const fw = tmpV.copy(s.v).normalize(); fw.y = THREE.MathUtils.clamp(fw.y, -.6, .6); fw.normalize();
+    const right = new THREE.Vector3().crossVectors(fw, upV).normalize(), u2 = new THREE.Vector3().crossVectors(right, fw);
+    if(f.sick){ u2.applyAxisAngle(fw, .5); right.crossVectors(fw, u2); }     // chora ryba lekko przechyla się na bok
+    const sc = L*(1 + s.gulp*.12);
+    tmpM.makeBasis(fw, u2, right); tmpM.scale(tmpS.set(sc, sc, sc)); tmpM.setPosition(s.p);
+    const m = mesh[f.kind]; m.setMatrixAt(s.idx, tmpM);
+    m.setColorAt(s.idx, f.sick ? col.setRGB(.62, .64, .6) : f.hunger > 85 ? col.setRGB(.85, .85, .85) : col.setRGB(1, 1, 1));
+    m.geometry.attributes.aSpd.array[s.idx] = (night ? 2 : 4) + s.v.length()/u*5;
   }
-  for(const sp of species){ sp.mesh.instanceMatrix.needsUpdate = true; sp.mesh.geometry.attributes.aSpd.needsUpdate = true; }
+  for(const k in mesh){ mesh[k].instanceMatrix.needsUpdate = true; if(mesh[k].instanceColor) mesh[k].instanceColor.needsUpdate = true; mesh[k].geometry.attributes.aSpd.needsUpdate = true; }
 }
 
 // ---------- karma ----------
@@ -326,14 +392,13 @@ function buildFlakes(){
   for(let i=0;i<MAXF;i++){ F.push({alive:false, p:new THREE.Vector3(), v:new THREE.Vector3(), rot:new THREE.Euler(), age:0, rest:0, s:1}); flakes.setColorAt(i, c.set(cols[i % cols.length])); }
 }
 let fIdx = 0;
-function spawnFlake(x, z, y = surfY - u*.01){
+function spawnFlake(x, z, y){
   const k = F[fIdx]; fIdx = (fIdx + 1) % MAXF;
   k.alive = true; k.age = 0; k.rest = 0; k.s = u*(.035 + Math.random()*.03);
   k.p.set(THREE.MathUtils.clamp(x + (Math.random() - .5)*u*.12, -hw*.95, hw*.95), Math.min(y + (Math.random() - .5)*u*.08, surfY - u*.01), THREE.MathUtils.clamp(z + (Math.random() - .5)*u*.12, -D*.95, -u*.15));
-  k.v.set((Math.random() - .5)*u*.2, 0, (Math.random() - .5)*u*.2); k.float = k.p.y > surfY - u*.05 ? .4 + Math.random()*1.2 : 0; k.ph = Math.random()*6;
-  k.rot.set(Math.random()*6, Math.random()*6, 0);
+  k.v.set((Math.random() - .5)*u*.2, 0, (Math.random() - .5)*u*.2); k.float = k.p.y > surfY - u*.05 ? .4 + Math.random()*1.2 : 0; k.ph = Math.random()*6; k.rot.set(Math.random()*6, Math.random()*6, 0);
 }
-function updateFlakes(dt, t){
+function updateFlakes(dt, t, gdt){
   for(let i=0;i<MAXF;i++){
     const k = F[i];
     if(!k.alive){ tmpM.makeScale(0, 0, 0); flakes.setMatrixAt(i, tmpM); continue; }
@@ -341,170 +406,176 @@ function updateFlakes(dt, t){
     const fy = floorY + bump(k.p.x, k.p.z) + u*.01;
     if(k.age < k.float){ k.p.addScaledVector(k.v, dt); k.v.multiplyScalar(.97); }
     else if(k.p.y > fy){ k.p.y -= u*(.28 + .12*Math.sin(k.ph))*dt; k.p.x += Math.sin(t*2 + k.ph)*u*.12*dt; k.p.z += Math.cos(t*1.6 + k.ph)*u*.08*dt; k.rot.x += dt*1.5; k.rot.y += dt; }
-    else { k.p.y = fy; k.rest += dt; if(k.rest > 25) k.alive = false; }
-    const s = k.s*(k.rest > 20 ? (25 - k.rest)/5 : 1);
+    else { k.p.y = fy; k.rest += gdt; if(k.rest > 90){ k.alive = false; S.water = Math.max(0, S.water - .8); } }   // nie zjedzona karma gnije i psuje wodę
+    const s = k.s*(k.rest > 75 ? (90 - k.rest)/15 : 1);
     tmpM.makeRotationFromEuler(k.rot); tmpM.scale(tmpS.set(s, s, s)); tmpM.setPosition(k.p); flakes.setMatrixAt(i, tmpM);
   }
   flakes.instanceMatrix.needsUpdate = true;
 }
-// punkt ekranu (px) -> punkt w zbiorniku na głębokości z (cm), wzdłuż promienia od oka
-function screenToTank(px, py, z){
-  const sx = (px - W/2)*cmpp, sy = (H/2 - py)*cmpp, k = (eye.z - z)/eye.z;
-  return new THREE.Vector3(eye.x + (sx - eye.x)*k, eye.y + (sy - eye.y)*k, z);
-}
+function screenToTank(px, py, z){ const sx = (px - W/2)*cmpp, sy = (H/2 - py)*cmpp, k = (eye.z - z)/eye.z; return new THREE.Vector3(eye.x + (sx - eye.x)*k, eye.y + (sy - eye.y)*k, z); }
 let sprinkleAcc = 0;
-function sprinkle(px, py, dt, rate = 14){
-  sprinkleAcc += dt*rate;
-  // karma pojawia się dokładnie pod palcami (tuż za szybą) i opada w dół
-  while(sprinkleAcc >= 1){ sprinkleAcc--; const z = -u*(.3 + Math.random()*.4), p = screenToTank(px, py, z); spawnFlake(p.x, z, p.y); }
-}
-
+function sprinkle(px, py, dt, rate = 14){ sprinkleAcc += dt*rate; while(sprinkleAcc >= 1){ sprinkleAcc--; const z = -u*(.3 + Math.random()*.4), p = screenToTank(px, py, z); spawnFlake(p.x, z, p.y); } }
 let actx = null, lastPlop = 0;
-function plop(){
-  const now = performance.now(); if(now - lastPlop < 90) return; lastPlop = now;
-  try{ actx = actx || new AudioContext(); const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
-    o.type = 'sine'; o.frequency.setValueAtTime(900 + Math.random()*400, t); o.frequency.exponentialRampToValueAtTime(260, t + .08);
-    g.gain.setValueAtTime(.06, t); g.gain.exponentialRampToValueAtTime(.001, t + .1); o.connect(g).connect(actx.destination); o.start(t); o.stop(t + .12); }catch(e){}
+function plop(){ const now = performance.now(); if(now - lastPlop < 90) return; lastPlop = now;
+  try{ actx = actx || new AudioContext(); const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(900 + Math.random()*400, t); o.frequency.exponentialRampToValueAtTime(260, t + .08); g.gain.setValueAtTime(.06, t); g.gain.exponentialRampToValueAtTime(.001, t + .1); o.connect(g).connect(actx.destination); o.start(t); o.stop(t + .12); }catch(e){} }
+
+// ================= glony na szybie =================
+const AC = $('algae'), ax = AC.getContext('2d', {willReadFrequently:true});
+function algaeSize(){ AC.width = Math.max(60, Math.round(W/4)); AC.height = Math.max(60, Math.round(H/4)); ax.clearRect(0, 0, AC.width, AC.height); growAlgae(S.algae); }
+function coverage(){ const d = ax.getImageData(0, 0, AC.width, AC.height).data; let s = 0, n = 0; for(let i=3;i<d.length;i+=16){ s += d[i]; n++; } return Math.min(1, s/n/255/.5); }
+function addSpot(){ const w = AC.width, h = AC.height, x = Math.random()*w, y = h*(.15 + Math.pow(Math.random(), .7)*.9), r = (8 + Math.random()*22)*w/100;
+  const g = ax.createRadialGradient(x, y, 0, x, y, r); const hue = 85 + Math.random()*30;
+  g.addColorStop(0, `hsla(${hue},45%,26%,.6)`); g.addColorStop(.6, `hsla(${hue},40%,30%,.3)`); g.addColorStop(1, `hsla(${hue},40%,30%,0)`);
+  ax.globalCompositeOperation = 'source-over'; ax.fillStyle = g; ax.beginPath(); ax.arc(x, y, r, 0, 7); ax.fill(); }
+function growAlgae(target){ let guard = 0; while(coverage() < target - .015 && guard++ < 400) addSpot(); }
+function wipe(px, py){ const x = px/W*AC.width, y = py/H*AC.height, r = AC.width*.13;
+  const g = ax.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, 'rgba(0,0,0,.9)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ax.globalCompositeOperation = 'destination-out'; ax.fillStyle = g; ax.beginPath(); ax.arc(x, y, r, 0, 7); ax.fill(); ax.globalCompositeOperation = 'source-over'; }
+
+// ================= interfejs =================
+function toast(txt, kind = ''){ const t = document.createElement('div'); t.className = 'toast ' + kind; t.textContent = txt; $('toasts').prepend(t); setTimeout(() => t.remove(), 5200); while($('toasts').children.length > 3) $('toasts').lastChild.remove(); }
+function setBar(id, v){ const b = $(id); b.querySelector('b').style.width = Math.round(Math.max(0, Math.min(100, v))) + '%'; b.classList.toggle('low', v < 35); }
+function age(ms){ const d = Math.floor(ms/864e5), h = Math.floor(ms/36e5) % 24; return d ? `${d} ${d === 1 ? 'dzień' : 'dni'} ${h} godz.` : `${h} godz.`; }
+let tool = 'food', selected = null, flash = 0;
+function setTool(t){ tool = t; $('tFood').classList.toggle('on', t === 'food'); $('tSponge').classList.toggle('on', t === 'sponge'); }
+$('tFood').onclick = () => setTool('food');
+$('tSponge').onclick = () => { setTool('sponge'); if(S.algae < .05) toast('Szyba jest czysta. Glony pojawią się z czasem.'); };
+$('tWater').onclick = () => {
+  if(S.water > 90){ toast('Woda jest świeża, podmiana nie jest potrzebna.'); return; }
+  S.water = Math.min(100, S.water + 55); flash = 1; for(const b of B) if(b.burst){ b.on = true; b.p.set((Math.random()*2 - 1)*hw*.8, floorY + Math.random()*u, -D*(.1 + Math.random()*.8)); }
+  toast('Podmieniono część wody. Ryby oddychają z ulgą.', 'good'); save();
+};
+const LIGHTS = ['auto', 'on', 'off'], LL = {auto:'Światło auto', on:'Światło wł.', off:'Światło wył.'};
+$('tLight').onclick = () => { S.light = LIGHTS[(LIGHTS.indexOf(S.light) + 1) % 3]; $('lightLbl').textContent = LL[S.light]; save(); };
+$('lightLbl').textContent = LL[S.light];
+const SPEEDS = [1, 60, 600];
+$('speed').onclick = () => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; $('speed').textContent = 'czas ×' + speed; toast(speed === 1 ? 'Czas płynie normalnie.' : `Czas płynie ${speed}× szybciej (do testów).`); };
+$('cardX').onclick = () => { selected = null; $('card').classList.remove('show'); };
+$('fName').addEventListener('input', e => { if(selected){ selected.f.name = e.target.value.trim() || selected.f.name; save(); } });
+function showCard(s){ selected = s; $('fName').value = s.f.name; $('card').classList.add('show'); updateCard(); }
+function updateCard(){
+  if(!selected) return; const f = selected.f;
+  const state = f.sick ? 'choruje' : isNight() ? 'śpi' : f.hunger > 70 ? 'głodna, prosi o jedzenie' : f.hunger < 15 ? 'najedzona' : 'w dobrej formie';
+  $('fMeta').innerHTML = `<span>Gatunek</span><b>${SPECIES[f.kind].label}${f.size < .8 ? ' (młoda)' : ''}</b><span>Wiek</span><b>${age(gameNow - f.born)}</b><span>Najedzenie</span><b>${Math.round(100 - f.hunger)}%</b><span>Stan</span><b>${state}</b>`;
+}
+const raycaster = new THREE.Raycaster();
+function pickFish(px, py){
+  raycaster.setFromCamera(new THREE.Vector2(px/W*2 - 1, -(py/H)*2 + 1), camera);
+  let best = null;
+  for(const k in mesh){ mesh[k].boundingSphere = null; const hit = raycaster.intersectObject(mesh[k])[0]; if(hit && (!best || hit.distance < best.distance)) best = {k, id:hit.instanceId, distance:hit.distance}; }
+  if(!best){ // łatwiejsze trafienie: najbliższa ryba w promieniu palca
+    let bd = (40)**2; for(const s of swim){ const p = s.p.clone().project(camera), x = (p.x + 1)/2*W, y = (1 - p.y)/2*H, d = (x - px)**2 + (y - py)**2; if(d < bd){ bd = d; best = {s}; } }
+    return best ? best.s : null;
+  }
+  return swim.find(s => s.f.kind === best.k && s.idx === best.id);
 }
 
-// ---------- kamera z perspektywą okna (off-axis) ----------
-function updateCamera(){
-  const n = .5, f = D*6 + 200;
-  camera.position.copy(eye); camera.quaternion.identity(); camera.updateMatrixWorld();
-  const l = (-hw - eye.x)*n/eye.z, r = (hw - eye.x)*n/eye.z, t = (hh - eye.y)*n/eye.z, b = (-hh - eye.y)*n/eye.z;
-  camera.projectionMatrix.makePerspective(l, r, t, b, n, f);
-  camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
-  scene.fog.near = eye.z; scene.fog.far = eye.z + D*3.2;
-  $('sheen').style.transform = `translate(${-eye.x/cmpp*1.4}px, ${eye.y/cmpp*.6}px)`;
+// dotyk: krótko = wybór ryby, przytrzymanie = karma, gąbka = ścieranie
+let touch = null;
+addEventListener('pointerdown', e => { if(e.target !== $('gl') && e.target !== document.body) return; touch = {x:e.clientX, y:e.clientY, sx:e.clientX, sy:e.clientY, t:performance.now(), moved:false}; });
+addEventListener('pointermove', e => { if(!touch) return; touch.x = e.clientX; touch.y = e.clientY; if(Math.hypot(touch.x - touch.sx, touch.y - touch.sy) > 10) touch.moved = true; });
+addEventListener('pointerup', () => { if(touch && tool === 'sponge') S.algae = Math.min(S.algae, coverage()); if(touch && !touch.moved && performance.now() - touch.t < 250){ const s = pickFish(touch.x, touch.y); if(s) showCard(s); } touch = null; });
+addEventListener('pointercancel', () => touch = null);
+
+// ================= karmienie dłonią (opcjonalnie, kamera) =================
+let video = null, handLm = null, lastVT = -1, lastHand = -1e9, handOn = false;
+const hand = {x:0, y:0, pinch:false};
+$('tHand').onclick = async () => {
+  if(handOn){ handOn = false; $('tHand').classList.remove('on'); $('pv').style.display = 'none'; video?.srcObject?.getTracks().forEach(t => t.stop()); video = null; return; }
+  try{
+    if(!navigator.mediaDevices?.getUserMedia) throw new Error('przeglądarka nie daje dostępu do kamery');
+    video = document.createElement('video'); video.setAttribute('playsinline', ''); video.muted = true; video.playsInline = true;
+    video.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none'; document.body.appendChild(video);
+    video.srcObject = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:640}, height:{ideal:480}}, audio:false}); await video.play();
+    handOn = true; $('tHand').classList.add('on'); $('pv').style.display = 'block'; toast('Ładuję model dłoni…');
+    if(!handLm){ const vision = await import(MP + '/vision_bundle.mjs'); const files = await vision.FilesetResolver.forVisionTasks(MP + '/wasm');
+      try{ handLm = await vision.HandLandmarker.createFromOptions(files, {baseOptions:{modelAssetPath:HAND, delegate:'GPU'}, runningMode:'VIDEO', numHands:1}); }
+      catch(e){ handLm = await vision.HandLandmarker.createFromOptions(files, {baseOptions:{modelAssetPath:HAND, delegate:'CPU'}, runningMode:'VIDEO', numHands:1}); } }
+    toast('Unieś dłoń, złącz kciuk z palcem wskazującym i pocieraj, a posypie się karma.', 'good');
+  }catch(err){ toast('Kamera: ' + (err.name === 'NotAllowedError' ? 'odmówiono dostępu.' : err.message), 'bad'); handOn = false; $('tHand').classList.remove('on'); }
+};
+function trackHand(now){
+  if(!handOn || !video || !handLm || video.readyState < 2 || video.currentTime === lastVT) return;
+  lastVT = video.currentTime;
+  const h = handLm.detectForVideo(video, now).landmarks?.[0];
+  const c = $('pv'), p = c.getContext('2d'); p.save(); p.scale(-1, 1); p.drawImage(video, -200, 0, 200, 150); p.restore();
+  if(!h) return;
+  const size = Math.hypot(h[0].x - h[9].x, h[0].y - h[9].y) || .1, pd = Math.hypot(h[4].x - h[8].x, h[4].y - h[8].y)/size;
+  hand.pinch = hand.pinch ? pd < .55 : pd < .35;
+  const tx = W/2 + ((1 - (h[4].x + h[8].x)/2) - .5)*W*1.5, ty = H/2 + ((h[4].y + h[8].y)/2 - .5)*H*1.5;
+  hand.x += (tx - hand.x)*.5; hand.y += (ty - hand.y)*.5; lastHand = now;
+  p.fillStyle = hand.pinch ? '#ffd46a' : '#7fe0ff'; for(const k of h) p.fillRect((1 - k.x)*200 - 2, k.y*150 - 2, 4, 4);
 }
 
+// ================= widok i pętla =================
 function resize(){
-  W = innerWidth; H = innerHeight;
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.setSize(W, H, false);
-  cmpp = matchMedia('(pointer:coarse)').matches ? 2.54/160 : 2.54/96;
-  hw = W*cmpp/2; hh = H*cmpp/2; u = Math.min(hw, hh); D = Math.max(hw, hh)*1.5;
-  EZ = matchMedia('(pointer:coarse)').matches ? 35 : 55;
-  if(!tracking){ eye.set(0, hh*.35, EZ); eyeT.copy(eye); }
-  buildTank();
+  W = innerWidth; H = innerHeight; renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.setSize(W, H, false);
+  const touchDev = matchMedia('(pointer:coarse)').matches; cmpp = touchDev ? 2.54/160 : 2.54/96;
+  hw = W*cmpp/2; hh = H*cmpp/2; u = Math.min(hw, hh); D = Math.max(hw, hh)*1.5; EZ = touchDev ? 35 : 55;
+  eye.set(0, hh*.3, EZ); buildTank(); algaeSize();
 }
 addEventListener('resize', resize); resize();
-
-// ---------- śledzenie twarzy i dłoni (MediaPipe, lokalnie) ----------
-let video = null, faceLm = null, handLm = null, lastVT = -1, flip = 0, lastFaceRes = null, lastHandRes = null;
-const hand = {seen:false, x:0, y:0, pinch:false};
-async function startCam(){
-  if(!navigator.mediaDevices?.getUserMedia) throw new Error('ta przeglądarka nie daje dostępu do kamery. Otwórz link w Safari lub Chrome, nie w aplikacji (Messenger, GitHub, Claude)');
-  $('msg').textContent = 'Proszę o dostęp do kamery…';
-  video = document.createElement('video');
-  video.setAttribute('playsinline', ''); video.setAttribute('autoplay', ''); video.muted = true; video.playsInline = true;
-  video.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none';
-  document.body.appendChild(video);
-  video.srcObject = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:640}, height:{ideal:480}}, audio:false});
-  await video.play();
-  await new Promise(r => video.videoWidth ? r() : video.addEventListener('loadedmetadata', r, {once:true}));
-  const pvc = $('pv'); pvc.width = 200; pvc.height = Math.round(200*video.videoHeight/video.videoWidth) || 150; pvc.style.display = 'block';
-}
-async function loadModels(){
-  camStage = 'ładuję modele…';
-  const vision = await import(MP + '/vision_bundle.mjs');
-  const files = await vision.FilesetResolver.forVisionTasks(MP + '/wasm');
-  const mk = async (cls, path, extra) => { try{ return await cls.createFromOptions(files, {baseOptions:{modelAssetPath:path, delegate:'GPU'}, runningMode:'VIDEO', ...extra}); } catch(e){ return await cls.createFromOptions(files, {baseOptions:{modelAssetPath:path, delegate:'CPU'}, runningMode:'VIDEO', ...extra}); } };
-  faceLm = await mk(vision.FaceLandmarker, FACE, {numFaces:1});
-  camStage = 'ładuję model dłoni…';
-  handLm = await mk(vision.HandLandmarker, HAND, {numHands:1});
-  camStage = '';
-}
-function track(now){
-  if(!video || video.readyState < 2 || video.currentTime === lastVT) return;
-  lastVT = video.currentTime;
-  if(!faceLm){ drawPv(); return; }
-  flip ^= 1;
-  if(flip || !handLm){
-    const r = faceLm.detectForVideo(video, now), fc = r.faceLandmarks?.[0]; lastFaceRes = fc || null;
-    if(fc){
-      const vw = video.videoWidth, vh = video.videoHeight, FL = 2*Math.tan(32.5*Math.PI/180), fovW = vw >= vh ? FL : FL*vw/vh, fovH = vw >= vh ? FL*vh/vw : FL;
-      const A = {x:1 - fc[468].x, y:fc[468].y}, B = {x:1 - fc[473].x, y:fc[473].y};
-      const ipd = Math.hypot((B.x - A.x)*vw, (B.y - A.y)*vh)/vw;
-      dist = Math.min(100, Math.max(15, 6.3/(ipd*fovW)));
-      const hx = ((A.x + B.x)/2 - .5)*fovW*dist, hy = -((A.y + B.y)/2 - .5)*fovH*dist;
-      eyeT.set(dir*hx*gain, dir*(hy + hh)*gain, dist);                 // kamera jest nad górną krawędzią ekranu
-      lastFace = now;
-    }
-  } else {
-    const r = handLm.detectForVideo(video, now), h = r.landmarks?.[0]; lastHandRes = h || null;
-    if(h){
-      const size = Math.hypot(h[0].x - h[9].x, h[0].y - h[9].y) || .1, pd = Math.hypot(h[4].x - h[8].x, h[4].y - h[8].y)/size;
-      hand.pinch = hand.pinch ? pd < .55 : pd < .35;
-      const mx = 1 - (h[4].x + h[8].x)/2, my = (h[4].y + h[8].y)/2;
-      const tx = W/2 + (mx - .5)*W*1.5, ty = H/2 + (my - .5)*H*1.5;
-      hand.x += (tx - hand.x)*.5; hand.y += (ty - hand.y)*.5; hand.seen = true; lastHand = now;
-    }
-  }
-  drawPv();
-}
-function drawPv(){
-  const c = $('pv'), p = c.getContext('2d'), w = c.width, h = c.height, fc = lastFaceRes, hd = lastHandRes;
-  p.save(); p.scale(-1, 1); p.drawImage(video, -w, 0, w, h); p.restore();
-  c.className = fc ? 'ok' : camStage ? '' : 'no';
-  if(fc){ p.fillStyle = '#f6c632'; for(const k of [468, 473]){ p.beginPath(); p.arc((1 - fc[k].x)*w, fc[k].y*h, 4, 0, 7); p.fill(); } }
-  if(hd){ p.fillStyle = hand.pinch ? '#ffd46a' : '#7fe0ff'; for(const k of hd){ p.fillRect((1 - k.x)*w - 2, k.y*h - 2, 4, 4); } }
-  p.fillStyle = 'rgba(0,0,0,.6)'; p.fillRect(0, h - 26, w, 26);
-  p.fillStyle = fc ? '#4cd07d' : camStage ? '#f6c632' : '#ff6b5e'; p.font = '600 16px Barlow,sans-serif'; p.textAlign = 'center';
-  p.fillText(camStage || (fc ? 'twarz OK · ' + Math.round(dist) + ' cm' : 'brak twarzy'), w/2, h - 8);
-}
-
-// ---------- sterowanie bez kamery ----------
-let touch = null;
-addEventListener('pointerdown', e => { if(e.target.closest('.screen, button, #pv')) return; touch = {x:e.clientX, y:e.clientY}; });
-addEventListener('pointermove', e => { if(touch){ touch.x = e.clientX; touch.y = e.clientY; } if(!tracking && e.pointerType === 'mouse'){ eyeT.x = (e.clientX/W - .5)*2*hw*gain*1.5; eyeT.y = -(e.clientY/H - .5)*2*hh*gain + hh*.35; } });
-addEventListener('pointerup', () => touch = null); addEventListener('pointercancel', () => touch = null);
-addEventListener('deviceorientation', e => { if(tracking || e.gamma == null) return; eyeT.x = Math.max(-30, Math.min(30, e.gamma))/30*hw*1.5*gain*dir; eyeT.y = -Math.max(-30, Math.min(30, e.beta - 45))/30*hh*gain*dir; });
-
-// ---------- pętla ----------
-let last = 0;
+const fogClean = new THREE.Color('#0d4650'), fogDirty = new THREE.Color('#3b5226'), fogNight = new THREE.Color('#061a24');
+let last = 0, lightK = isNight() ? 0 : 1, saveT = 0, covT = 0, hintsT = 0;
 function frame(now){
-  const dt = Math.min(.05, (now - (last || now))/1000), t = now/1000; last = now;
+  const dt = Math.min(.05, (now - (last || now))/1000), t = now/1000, gdt = dt*speed; last = now;
+  gameNow += gdt*1000; simulate(gdt);
   U.time.value = t;
-  if(tracking) track(now);
-  if(tracking && now - lastFace > 1000){ eyeT.x *= .97; eyeT.y += (hh*.35 - eyeT.y)*.03; eyeT.z += (EZ - eyeT.z)*.03; }
-  const a = 1 - Math.pow(.0005, dt); eye.lerp(eyeT, a);
-  // karmienie: szczypta dłonią lub dotyk
-  const handOn = tracking && now - lastHand < 400;
-  const cur = $('cursor');
-  if(handOn){ cur.style.opacity = 1; cur.style.transform = `translate(${hand.x}px, ${hand.y}px)`; cur.classList.toggle('pinch', hand.pinch); if(hand.pinch) sprinkle(hand.x, hand.y, dt); }
+  const night = isNight(); lightK += ((night ? 0 : 1) - lightK)*Math.min(1, dt*1.5);
+  hemi.intensity = .25 + 1.35*lightK; hemi.color.setHSL(.53, .6, .55 + .25*lightK); sun.intensity = 2.2*lightK; U.ci.value = .15 + .85*lightK;
+  for(const r of rays) r.material.opacity = (.12 + .08*Math.sin(t*.6 + r.userData.ph))*lightK;
+  // mętna woda: mgła gęstnieje i zielenieje
+  flash = Math.max(0, flash - dt*.5);
+  const dirty = Math.max(0, Math.min(1, (70 - S.water)/70))*(1 - flash);
+  scene.fog.color.copy(fogClean).lerp(fogDirty, dirty).lerp(fogNight, 1 - lightK); scene.background.copy(scene.fog.color).multiplyScalar(.5);
+  // lekki, spokojny ruch widoku, żeby zbiornik był trójwymiarowy
+  eye.x = Math.sin(t*.13)*u*.25; eye.y = hh*.3 + Math.sin(t*.09)*u*.12;
+  scene.fog.near = eye.z; scene.fog.far = eye.z + D*(3.2 - 2.1*dirty);
+  const n = .5; camera.position.copy(eye); camera.quaternion.identity(); camera.updateMatrixWorld();
+  camera.projectionMatrix.makePerspective((-hw - eye.x)*n/eye.z, (hw - eye.x)*n/eye.z, (hh - eye.y)*n/eye.z, (-hh - eye.y)*n/eye.z, n, D*6 + 200);
+  camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+  // narzędzia
+  trackHand(now);
+  const handVisible = handOn && now - lastHand < 400, cur = $('cursor');
+  if(handVisible){ cur.style.opacity = 1; cur.className = hand.pinch ? 'pinch' : ''; cur.style.transform = `translate(${hand.x}px,${hand.y}px)`; if(hand.pinch) sprinkle(hand.x, hand.y, dt); }
+  else if(touch && tool === 'sponge'){ cur.style.opacity = 1; cur.className = 'sponge'; cur.style.transform = `translate(${touch.x}px,${touch.y}px)`; }
   else cur.style.opacity = 0;
-  if(touch) sprinkle(touch.x, touch.y, dt, 18);
-  for(const b of B){ b.p.y += b.v*dt; b.p.x = b.origin.x + Math.sin(t*3 + b.ph)*u*.06*(b.p.y - floorY)/(surfY - floorY); if(b.p.y > surfY) b.p.copy(b.origin).add(tmpV.set(0, -Math.random()*u*.3, 0)); tmpM.makeScale(b.r, b.r, b.r); tmpM.setPosition(b.p); bubbles.setMatrixAt(B.indexOf(b), tmpM); }
+  if(touch && tool === 'food' && (touch.moved || now - touch.t > 200)) sprinkle(touch.x, touch.y, dt, 18);
+  if(touch && tool === 'sponge'){ wipe(touch.x, touch.y); covT = 0; }
+  covT -= dt; if(covT <= 0){ covT = .5; const c = coverage(); if(touch && tool === 'sponge') S.algae = Math.min(S.algae, c); else if(S.algae > c + .02) growAlgae(S.algae); }
+  // bąbelki
+  for(let i=0;i<B.length;i++){ const b = B[i];
+    if(b.on){ b.p.y += b.v*dt*(b.burst ? 1.6 : 1); if(!b.burst) b.p.x = b.origin.x + Math.sin(t*3 + b.ph)*u*.06*(b.p.y - floorY)/(surfY - floorY);
+      if(b.p.y > surfY){ if(b.burst) b.on = false; else b.p.copy(b.origin).add(tmpV.set(0, -Math.random()*u*.3, 0)); } }
+    tmpM.makeScale(b.on ? b.r : 0, b.on ? b.r : 0, b.on ? b.r : 0); tmpM.setPosition(b.p); bubbles.setMatrixAt(i, tmpM); }
   bubbles.instanceMatrix.needsUpdate = true;
-  for(const r of rays) r.material.opacity = .12 + .08*Math.sin(t*.6 + r.userData.ph);
-  updateFish(dt, t); updateFlakes(dt, t);
-  updateCamera();
+  updateFish(dt, t, night); updateFlakes(dt, t, gdt);
   renderer.render(scene, camera);
-  if(camStage !== 'błąd modelu') $('status').textContent = !tracking ? '' : camStage ? 'kamera działa, ' + camStage : '';
-  $('chFace').classList.toggle('on', tracking && now - lastFace < 500);
-  $('chHand').classList.toggle('on', handOn);
-  $('chPinch').classList.toggle('on', handOn && hand.pinch);
+  // znacznik wybranej ryby
+  if(selected && S.fish.includes(selected.f)){ const p = selected.p.clone().project(camera); $('ring').style.display = 'block'; $('ring').style.transform = `translate(${(p.x + 1)/2*W}px,${(1 - p.y)/2*H}px)`; } else $('ring').style.display = 'none';
+  // panel stanu
+  hintsT -= dt;
+  if(hintsT <= 0){ hintsT = .5;
+    const days = Math.floor((gameNow - S.start)/864e5) + 1;
+    $('title').textContent = `Dzień ${days}`; $('clock').textContent = `${S.fish.length} ryb` + (night ? ' · noc' : '');
+    setBar('bFood', 100 - avgHunger()); setBar('bWater', S.water); setBar('bGlass', 100 - S.algae*100); setBar('bMood', mood());
+    note('hungry', 'Ryby są głodne. Przytrzymaj palec w wodzie, żeby je nakarmić.', 'bad', avgHunger() > 70);
+    note('water', 'Woda mętnieje. Podmień ją, zanim ryby zachorują.', 'bad', S.water < 40);
+    note('algae', 'Szyba zarasta glonami. Weź gąbkę i zetrzyj je palcem.', 'bad', S.algae > .45);
+    updateCard();
+  }
+  saveT -= dt; if(saveT <= 0){ saveT = 5; save(); }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+addEventListener('visibilitychange', () => { if(document.hidden) save(); });
+addEventListener('pagehide', save);
 
-function hint(txt, ms = 7000){ const h = $('hint'); h.textContent = txt; h.style.opacity = 1; clearTimeout(hint.t); hint.t = setTimeout(() => h.style.opacity = 0, ms); }
-$('gain').addEventListener('input', e => gain = +e.target.value);
-$('go').addEventListener('click', async () => {
-  const why = err => (err && (err.name && err.name !== 'Error' ? err.name + ' – ' : '') + (err.message || err));
-  try{ await startCam(); }
-  catch(err){ console.log(err); $('msg').textContent = 'Kamera: ' + (err && err.name === 'NotAllowedError' ? 'odmówiono dostępu. Zezwól na kamerę w ustawieniach przeglądarki dla tej strony i odśwież.' : why(err)); return; }
-  tracking = true; $('start').classList.add('hidden'); $('dirBtn').style.display = 'block'; $('chips').classList.remove('hidden');
-  hint('Ruszaj głową. Unieś dłoń, złącz kciuk z palcem wskazującym i pocieraj, a posypie się karma.', 9000);
-  try{ await loadModels(); }
-  catch(err){ console.log(err); camStage = 'błąd modelu'; $('status').textContent = 'Model się nie wczytał: ' + why(err); }
-});
-$('goNo').addEventListener('click', async () => {
-  try{ if(window.DeviceOrientationEvent?.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch(e){}
-  $('start').classList.add('hidden'); $('dirBtn').style.display = 'block';
-  hint('Dotknij i przytrzymaj ekran, żeby sypnąć karmę. Przechyl telefon, żeby zmienić perspektywę.');
-});
-$('dirBtn').addEventListener('click', () => { dir = -dir; $('dirBtn').textContent = dir > 0 ? '⇄ kierunek' : '⇄ odwrócony'; });
+$('go').onclick = () => {
+  $('start').classList.add('hidden');
+  if(S.awayMsg) toast(`Nie było cię ${S.awayMsg} godz. ` + (avgHunger() > 60 ? 'Ryby zgłodniały.' : 'Ryby radziły sobie same.') + (S.bornAway > 0 ? ` W tym czasie urodziło się ${S.bornAway} młodych!` : ''), S.bornAway > 0 ? 'good' : '');
+  else toast('Stuknij rybę, żeby poznać jej imię.');
+};
 }
 </script>
 </body>
