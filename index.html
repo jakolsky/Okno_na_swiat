@@ -271,7 +271,7 @@ function buildFish(){
     sp.mesh = new THREE.InstancedMesh(g, mat, sp.n); sp.mesh.frustumCulled = false; world.add(sp.mesh);
     for(let i=0;i<sp.n;i++){
       const f = {sp, i, p:new THREE.Vector3((Math.random()*2 - 1)*hw*.7, floorY + (surfY - floorY)*(.25 + Math.random()*.6), -D*(.2 + Math.random()*.7)),
-        v:new THREE.Vector3(Math.random() - .5, (Math.random() - .5)*.2, Math.random() - .5).setLength(u*.3), target:new THREE.Vector3(), tt:0, gulp:0, L:sp.len*u*(.85 + Math.random()*.3)};
+        v:new THREE.Vector3(Math.random() - .5, (Math.random() - .5)*.2, Math.random() - .5).setLength(u*.3), target:new THREE.Vector3(), tt:0, gulp:0, L:sp.len*u*(.85 + Math.random()*.3), notice:1.2 + Math.random()*2.3};   // notice: po ilu sekundach ryba zauważa karmę
       fishes.push(f);
     }
   }
@@ -286,7 +286,7 @@ function updateFish(dt, t){
     const acc = tmpA.set(0, 0, 0), maxS = f.sp.speed*u;
     // jedzenie: najbliższy płatek w zasięgu
     let best = null, bd = 1e9;
-    for(const k of F){ if(!k.alive) continue; const d = k.p.distanceToSquared(f.p); if(d < bd){ bd = d; best = k; } }
+    for(const k of F){ if(!k.alive || k.age < f.notice) continue; const d = k.p.distanceToSquared(f.p); if(d < bd){ bd = d; best = k; } }
     const hungry = best && bd < (u*4.5)**2;
     if(hungry){
       acc.add(tmpV.copy(best.p).sub(f.p).setLength(maxS*3.5));
