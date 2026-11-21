@@ -5,7 +5,8 @@ Telefon albo laptop jako szyba okna. Przednia kamera śledzi oczy (MediaPipe Fac
 Strona: https://jakolsky.github.io/okno_na_swiat/
 
 ## Co jest w środku
-- `index.html`: cała scena i śledzenie oczu
+- `index.html`: scena i śledzenie oczu
+- `img/`: trzy warstwy zdjęć (góry, dolina, chata) z różną głębią
 - `model/face_landmarker.task`: model twarzy MediaPipe (float16, v1), wbudowany w projekt
 - `mediapipe/`: biblioteka `@mediapipe/tasks-vision` 0.10.14 (JS i WASM), wbudowana w projekt
 

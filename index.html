@@ -66,146 +66,68 @@ const EZ = 45, BY = .12;                         // BY: wysokość oczu (horyzon
 let W, H, cmpp, hw, hh, G;
 const eye = {x:0, y:0, z:EZ}, eyeT = {x:0, y:0, z:EZ};
 let gain = 1, dir = -1, lm = null, video = null, tracking = false, lastSeen = -1e9, showPv = true, last = 0, camStage = '', dist = EZ, found = false;
-let mountains = [], trees = [], grass = [], clouds = [], birds = [], flutter = [];
 
-// prosty generator liczb z ziarnem, żeby krajobraz był zawsze ten sam
-let seed = 7; const rnd = () => (seed = (seed*16807) % 2147483647)/2147483647;
-const f = z => (EZ - z)/EZ;                      // skala: rozmiar na ekranie przy patrzeniu na wprost -> rozmiar w świecie
-
-function build(){
-  seed = 7;
-  G = hh*.95;                                    // poziom ziemi pod oknem
-  const ridge = (z, n, amp, base, col) => {
-    const k = f(z), pts = [];
-    for(let i=0;i<=n;i++){
-      const sx = -hw*5 + 10*hw*i/n;
-      const h = base + amp*(.55*Math.sin(i*.9 + z) + .3*Math.sin(i*2.3 + z*.7) + .15*Math.sin(i*5.1)) + amp*.4*rnd();
-      pts.push([sx*k, -G + h*k]);
-    }
-    return {z, pts, col};
-  };
-  // im dalej, tym jaśniej i bardziej niebiesko (perspektywa powietrzna)
-  mountains = [ridge(-1400, 26, hh*.16, hh*.3, '#a9b6cc'), ridge(-650, 22, hh*.12, hh*.2, '#8197b0'), ridge(-260, 18, hh*.06, hh*.1, '#6e8f84'), ridge(-120, 16, hh*.04, hh*.05, '#5f8a5c')];
-  trees = [];
-  for(let i=0;i<34;i++){
-    const z = -40 - rnd()*rnd()*160, k = f(z);
-    trees.push({x:(rnd()*2-1)*hw*3.2*k, z, h:(hh*.1 + rnd()*hh*.12)*k, kind:rnd() < .55 ? 'pine' : 'oak', tone:rnd()});
-  }
-  trees.push({x:-hw*1.2*f(-14), z:-14, h:hh*.95*f(-14), kind:'oak', tone:.2});
-  trees.push({x:hw*1.3*f(-22), z:-22, h:hh*.6*f(-22), kind:'pine', tone:.6});
-  trees.sort((a, b) => a.z - b.z);
-  grass = Array.from({length:150}, () => { const z = -3 - rnd()*rnd()*40, k = f(z); return {x:(rnd()*2-1)*hw*1.6*k, z, h:(.14 + rnd()*.22)*hh*k*.35, ph:rnd()*7, flower: rnd() < .12 ? ['#f2d14b','#f4f0e6','#d9668a'][Math.floor(rnd()*3)] : null}; }).sort((a, b) => a.z - b.z);
-  clouds = Array.from({length:9}, () => ({x:(rnd()*2-1)*hw*6, y:hh*(.55 + rnd()*.6), z:-3000, w:hw*(.45 + rnd()*.6), sp:hw*(.006 + rnd()*.01)}));
-  birds = Array.from({length:5}, () => ({x:(rnd()*2-1)*hw*4, y:hh*(.25 + rnd()*.5), z:-90 - rnd()*200, sp:(.03 + rnd()*.03), ph:rnd()*7}));
-  flutter = Array.from({length:4}, () => ({x:(rnd()*2-1)*hw, y:-G + hh*(.2 + rnd()*.4), z:-6 - rnd()*14, ph:rnd()*7, col:['#f6c632','#f4f0e6','#e8834a'][Math.floor(rnd()*3)]}));
-}
+// warstwy zdjęć: im dalej (z bardziej ujemne), tym wolniej się przesuwają
+const LAYERS = [
+  {src:'img/far.jpg',   z:-4000, dy:-.2,  os:2.2},   // niebo i Dolomity, praktycznie w nieskończoności
+  {src:'img/mid.webp',  z:-160,  dy:.05,  os:1.8},      // dolina, wioska, las
+  {src:'img/near.webp', z:-22,   dy:0,    os:1.35},      // chata, balkon z pelargoniami, ławka z kotem
+];
+let ready = 0, skyTop = '#2f6fc4';
+for(const L of LAYERS){ L.img = new Image(); L.img.onload = () => { ready++; if(L.z < -1000) skyTop = topColor(L.img); }; L.img.src = L.src; }
+function topColor(img){ try{ const c = document.createElement('canvas'); c.width = 8; c.height = 1; const x = c.getContext('2d'); x.drawImage(img, 0, 0, img.width, 4, 0, 0, 8, 1); const d = x.getImageData(4, 0, 1, 1).data; return `rgb(${d[0]},${d[1]},${d[2]})`; }catch(e){ return skyTop; } }
 function resize(){
   const dpr = Math.min(devicePixelRatio || 1, 2);
   W = innerWidth; H = innerHeight; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   cmpp = matchMedia('(pointer:coarse)').matches ? 2.54/160 : 2.54/96;
-  hw = W*cmpp/2; hh = H*cmpp/2; build();
+  hw = W*cmpp/2; hh = H*cmpp/2;
 }
 addEventListener('resize', resize); resize();
 
-// rzut przez szybę: punkt (x,y,z) za oknem (z<0) na płaszczyznę ekranu z=0, widziany z pozycji oka
+// rzut przez szybę: punkt (x,y,z) za oknem (z<0) na płaszczyznę ekranu, widziany z pozycji oka
 function P(x, y, z){ const t = eye.z/(eye.z - z); return [W/2 + (eye.x + (x - eye.x)*t)/cmpp, H/2 - (eye.y + (y - eye.y)*t)/cmpp, t/cmpp]; }
-function poly(pts, z, fill){ ctx.beginPath(); pts.forEach((p, i) => { const q = P(p[0], p[1], z); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.fillStyle = fill; ctx.fill(); }
+
+// prostokąt warstwy na ekranie (px) dla bieżącej pozycji oka
+function layerRect(L){
+  const ar = L.img.naturalWidth/L.img.naturalHeight, ey0 = hh*BY;
+  // przy patrzeniu na wprost warstwa wypełnia ekran z zapasem ("cover")
+  let rh = 2*hh*L.os, rw = rh*ar; if(rw < 2*hw*L.os){ rw = 2*hw*L.os; rh = rw/ar; }
+  const sTop = rh/2 - L.dy*rh, sLeft = -rw/2, k = (EZ - L.z)/EZ;
+  // ten sam prostokąt przeniesiony na głębokość warstwy
+  return [P(sLeft*k, ey0 + (sTop - ey0)*k, L.z), P((sLeft + rw)*k, ey0 + (sTop - rh - ey0)*k, L.z)];
+}
+// czy żadna warstwa nie odsłania swojej krawędzi (boki i dół)
+function covers(){
+  for(const L of LAYERS){ if(!L.img.naturalWidth) continue; const [a, b] = layerRect(L); if(a[0] > 0 || b[0] < W || b[1] < H) return false; }
+  return true;
+}
+// jeśli wychylisz się za mocno, zatrzymaj widok na krawędzi zdjęcia zamiast pokazywać dziurę
+function clampEye(){
+  const bx = 0, by = hh*BY, tx = eye.x, ty = eye.y;
+  if(covers()) return;
+  let lo = 0, hi = 1;
+  for(let i=0;i<12;i++){ const m = (lo + hi)/2; eye.x = bx + (tx - bx)*m; eye.y = by + (ty - by)*m; covers() ? lo = m : hi = m; }
+  eye.x = bx + (tx - bx)*lo; eye.y = by + (ty - by)*lo;
+}
 
 function draw(now){
-  const hz = P(0, -G, -1e6)[1];                                    // linia horyzontu na ekranie
-  // niebo
-  const sky = ctx.createLinearGradient(0, 0, 0, hz);
-  sky.addColorStop(0, '#5b86c4'); sky.addColorStop(.6, '#a9c0d9'); sky.addColorStop(1, '#f6dcae');
-  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, Math.max(0, hz) + 2);
-  // słońce bardzo daleko
-  const sn = P(hw*.55*f(-1e4), -G + hh*.75*f(-1e4), -1e4), sr = hh*.09*f(-1e4)*sn[2];
-  const sg = ctx.createRadialGradient(sn[0], sn[1], 0, sn[0], sn[1], sr*7);
-  sg.addColorStop(0, 'rgba(255,246,214,1)'); sg.addColorStop(.14, 'rgba(255,240,200,.9)'); sg.addColorStop(.15, 'rgba(255,226,170,.35)'); sg.addColorStop(1, 'rgba(255,220,160,0)');
-  ctx.fillStyle = sg; ctx.fillRect(sn[0] - sr*7, sn[1] - sr*7, sr*14, sr*14);
-  // chmury
-  for(const c of clouds){
-    c.x += c.sp*f(c.z)*.016; if(c.x > hw*7*f(c.z)/f(-3000)) c.x = -hw*7;
-    const k = f(c.z);
-    ctx.fillStyle = 'rgba(255,250,240,.75)';
-    for(let i=0;i<4;i++){
-      const p = P(c.x*k + (i - 1.5)*c.w*.42*k, -G + c.y*k + (i%2 ? .1 : 0)*c.w*k, c.z);
-      ctx.beginPath(); ctx.ellipse(p[0], p[1], c.w*.38*k*p[2], c.w*.16*k*p[2], 0, 0, 7); ctx.fill();
-    }
+  ctx.fillStyle = skyTop; ctx.fillRect(0, 0, W, H);
+  if(ready < LAYERS.length){ ctx.fillStyle = '#fff'; ctx.font = '600 16px Barlow,sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Ładuję widok…', W/2, H/2); }
+  const ey0 = hh*BY;
+  for(const L of LAYERS){
+    if(!L.img.complete || !L.img.naturalWidth) continue;
+    const [a, b] = layerRect(L);
+    ctx.drawImage(L.img, a[0], a[1], b[0] - a[0], b[1] - a[1]);
   }
-  // ziemia aż po horyzont
-  const gr = ctx.createLinearGradient(0, hz, 0, H);
-  gr.addColorStop(0, '#c9c39a'); gr.addColorStop(.12, '#8fa66d'); gr.addColorStop(1, '#3f6a2e');
-  ctx.beginPath(); [[-1e4,-2],[1e4,-2],[1e4,-1e6],[-1e4,-1e6]].forEach((q, i) => { const p = P(q[0], -G, q[1]); i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); });
-  ctx.fillStyle = gr; ctx.fill();
-  // góry i wzgórza, od najdalszych
-  for(const m of mountains){
-    const k = f(m.z), pts = [[m.pts[0][0], -G], ...m.pts, [m.pts[m.pts.length - 1][0], -G]];
-    poly(pts, m.z, m.col);
-    if(m.z < -1000){ // śnieg na szczytach
-      ctx.fillStyle = 'rgba(255,255,255,.55)';
-      for(let i=1;i<m.pts.length-1;i++){ const [x, y] = m.pts[i]; if(y > m.pts[i-1][1] && y > m.pts[i+1][1]){ const a = P(x, y, m.z), b = P(x - hw*.12*k, y - hh*.06*k, m.z), c = P(x + hw*.12*k, y - hh*.06*k, m.z); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.fill(); } }
-    }
-    if(m.z === -260){ // jezioro przed wzgórzami
-      const lz1 = -150, lz2 = -230;
-      const lake = []; for(let i=0;i<=20;i++){ const a = i/20*Math.PI*2; const z = (lz1 + lz2)/2 + Math.sin(a)*(lz2 - lz1)/2; lake.push(P(Math.cos(a)*hw*2.2*f(z) + hw*.4*f(z), -G, z)); }
-      ctx.beginPath(); lake.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
-      const lg = ctx.createLinearGradient(0, lake[15][1], 0, lake[5][1]); lg.addColorStop(0, '#d9dfe0'); lg.addColorStop(1, '#7fa2bb');
-      ctx.fillStyle = lg; ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1;
-      for(let i=0;i<6;i++){ const z = lz1 - 10 - i*12, a = P(-hw*.2*f(z) + Math.sin(now/1300 + i)*hw*.2*f(z), -G, z), b = P(hw*.5*f(z) + Math.sin(now/1300 + i)*hw*.2*f(z), -G, z); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
-    }
-  }
-  // ptaki
-  ctx.strokeStyle = '#2b2a2a'; ctx.lineCap = 'round';
-  for(const b of birds){
-    b.x += b.sp*f(b.z)*hw*.016; if(b.x > hw*4) b.x = -hw*4;
-    const k = f(b.z), p = P(b.x*k, -G + b.y*k + hh*.65*k, b.z), s = hw*.035*k*p[2], fl = Math.sin(now/120 + b.ph)*s*.6;
-    ctx.lineWidth = Math.max(1, s*.25); ctx.beginPath(); ctx.moveTo(p[0] - s, p[1] - fl); ctx.lineTo(p[0], p[1]); ctx.lineTo(p[0] + s, p[1] - fl); ctx.stroke();
-  }
-  // drzewa od najdalszych
-  for(const t of trees){
-    const fog = Math.min(.55, (-t.z - 20)/220);
-    const base = P(t.x, -G, t.z), top = P(t.x, -G + t.h, t.z), sc = base[2], hpx = base[1] - top[1];
-    const sway = Math.sin(now/1700 + t.x)*hpx*.012;
-    ctx.fillStyle = mix('#4a3626', '#b8bfa8', fog); ctx.fillRect(base[0] - hpx*.025, base[1] - hpx*.35, hpx*.05, hpx*.35);
-    if(t.kind === 'pine'){
-      ctx.fillStyle = mix(t.tone > .5 ? '#2c4f2e' : '#24442a', '#a9b8a2', fog);
-      for(let i=0;i<3;i++){ const y0 = base[1] - hpx*(.18 + i*.24), w = hpx*(.3 - i*.07); ctx.beginPath(); ctx.moveTo(base[0] - w + sway*i, y0); ctx.lineTo(base[0] + w + sway*i, y0); ctx.lineTo(base[0] + sway*(i + 1), y0 - hpx*.42); ctx.fill(); }
-    } else {
-      const c1 = mix(t.tone > .5 ? '#3f6b35' : '#4a7838', '#b3bfa0', fog), c2 = mix('#5d8a45', '#c2c9a8', fog);
-      for(const [dx, dy, r, c] of [[-.16, .55, .24, c1], [.16, .58, .24, c1], [0, .72, .27, c1], [-.05, .8, .16, c2], [.1, .66, .14, c2]]){
-        ctx.fillStyle = c; ctx.beginPath(); ctx.arc(base[0] + dx*hpx + sway, base[1] - dy*hpx, r*hpx, 0, 7); ctx.fill();
-      }
-    }
-  }
-  // trawa i kwiaty tuż za szybą
-  ctx.lineCap = 'round';
-  for(const g of grass){
-    const b = P(g.x, -G, g.z), tp = P(g.x + Math.sin(now/900 + g.ph)*g.h*.25, -G + g.h, g.z);
-    ctx.strokeStyle = g.z > -12 ? '#2f5a24' : '#4d7a35'; ctx.lineWidth = Math.max(1, .06*b[2]);
-    for(const o of [-1, 0, 1]){ ctx.beginPath(); ctx.moveTo(b[0] + o*.08*b[2], b[1]); ctx.quadraticCurveTo(b[0] + o*.05*b[2], (b[1] + tp[1])/2, tp[0] + o*.15*b[2], tp[1] + Math.abs(o)*.1*(b[1] - tp[1])); ctx.stroke(); }
-    if(g.flower){ ctx.fillStyle = g.flower; ctx.beginPath(); ctx.arc(tp[0], tp[1], Math.max(1.5, .09*b[2]), 0, 7); ctx.fill(); }
-  }
-  // motyle
-  for(const m of flutter){
-    m.x += Math.sin(now/1400 + m.ph)*.02; m.y += Math.cos(now/1100 + m.ph)*.01; m.z += Math.sin(now/2000 + m.ph)*.03;
-    const p = P(m.x, m.y, m.z), s = .18*p[2], wv = Math.abs(Math.sin(now/90 + m.ph));
-    ctx.fillStyle = m.col; ctx.beginPath(); ctx.ellipse(p[0] - s*.5, p[1], s*.6*wv + .5, s*.45, 0, 0, 7); ctx.ellipse(p[0] + s*.5, p[1], s*.6*wv + .5, s*.45, 0, 0, 7); ctx.fill();
-  }
-  // lekka mgiełka przy horyzoncie
-  const haze = ctx.createLinearGradient(0, hz - H*.12, 0, hz + H*.06);
-  haze.addColorStop(0, 'rgba(246,224,184,0)'); haze.addColorStop(.6, 'rgba(246,224,184,.35)'); haze.addColorStop(1, 'rgba(246,224,184,0)');
-  ctx.fillStyle = haze; ctx.fillRect(0, hz - H*.12, W, H*.18);
-  // cienka głębokość ościeżnicy, bez kolorowej ramy: tylko cień przy krawędziach
+  // delikatna winieta i cień ościeżnicy dla poczucia szyby
+  const v = ctx.createRadialGradient(W/2, H/2, Math.min(W, H)*.45, W/2, H/2, Math.max(W, H)*.75);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.28)');
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
   const dz = -1.2, side = (pts, col) => { ctx.beginPath(); pts.forEach((q, i) => { const p = P(...q); i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); };
-  side([[-hw,-hh,0],[hw,-hh,0],[hw,-hh,dz],[-hw,-hh,dz]], '#1b1a18');
-  side([[-hw,hh,0],[hw,hh,0],[hw,hh,dz],[-hw,hh,dz]], '#262420');
-  side([[-hw,-hh,0],[-hw,hh,0],[-hw,hh,dz],[-hw,-hh,dz]], '#211f1c');
-  side([[hw,-hh,0],[hw,hh,0],[hw,hh,dz],[hw,-hh,dz]], '#211f1c');
-}
-function mix(a, b, t){
-  const p = s => [1, 3, 5].map(i => parseInt(s.slice(i, i + 2), 16)), A = p(a), B = p(b);
-  return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v)*t)).join(',')})`;
+  side([[-hw,-hh,0],[hw,-hh,0],[hw,-hh,dz],[-hw,-hh,dz]], '#2a1d12');
+  side([[-hw,hh,0],[hw,hh,0],[hw,hh,dz],[-hw,hh,dz]], '#3a2818');
+  side([[-hw,-hh,0],[-hw,hh,0],[-hw,hh,dz],[-hw,-hh,dz]], '#33231a');
+  side([[hw,-hh,0],[hw,hh,0],[hw,hh,dz],[hw,-hh,dz]], '#33231a');
 }
 
 // ---------- śledzenie oczu (MediaPipe Face Landmarker, lokalnie) ----------
@@ -272,6 +194,7 @@ function frame(now){
   if(tracking){ track(now); if(now - lastSeen > 900){ eyeT.x *= .97; eyeT.y += (hh*BY - eyeT.y)*.03; } }
   const a = 1 - Math.pow(.0004, dt);
   eye.x += (eyeT.x - eye.x)*a; eye.y += (eyeT.y - eye.y)*a; eye.z += (eyeT.z - eye.z)*a;
+  if(ready >= LAYERS.length) clampEye();
   draw(now);
   if(camStage !== 'błąd modelu') $('status').textContent = !tracking ? '' : camStage ? 'kamera działa, ' + camStage : (found ? '' : 'nie widzę twarzy');
   requestAnimationFrame(frame);
