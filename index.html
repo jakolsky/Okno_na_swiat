@@ -20,11 +20,12 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;font
 .top{position:fixed;left:0;right:0;top:0;padding:max(14px,env(safe-area-inset-top)) 16px 0;text-align:center;pointer-events:none}
 #hint{font:600 19px/1.2 Fraunces,serif;text-shadow:0 2px 10px #000;transition:opacity .5s}
 #status{font-size:13px;opacity:.7;margin-top:4px}
-.chips{position:fixed;left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom));display:flex;flex-wrap:wrap;gap:6px;justify-content:center;pointer-events:none;padding:0 70px 0 12px}
+.chips{position:fixed;left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom));display:flex;flex-wrap:wrap;gap:6px;justify-content:center;pointer-events:none;padding:0 136px 0 12px}
 .chip{font:600 13px Barlow,sans-serif;padding:5px 10px;border-radius:14px;background:#00000070;border:1px solid #ffffff25;opacity:.55;transition:all .2s}
 .chip.on{opacity:1;background:var(--gold);color:#120f0c;border-color:var(--gold)}
-#pvBtn{position:fixed;right:12px;bottom:max(10px,env(safe-area-inset-bottom));width:48px;height:48px;border-radius:24px;border:1px solid #ffffff40;background:#00000070;color:var(--ink);font:600 12px Barlow,sans-serif;display:none}
-#pv{position:fixed;right:12px;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 56px);width:104px;height:78px;border-radius:10px;border:1px solid #ffffff40;display:none;background:#000}
+#pvBtn{display:none!important}
+#pv{position:fixed;right:12px;bottom:max(12px,env(safe-area-inset-bottom));width:112px;height:auto;border-radius:12px;border:3px solid #777;display:none;background:#000;transition:border-color .2s}
+#pv.ok{border-color:#4cd07d}#pv.no{border-color:#e0352b}
 .screen{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:#120f0ce8}
 .card{max-width:400px;text-align:center}
 h1{font:600 46px/1.05 Fraunces,serif;margin-bottom:12px}
@@ -73,7 +74,7 @@ const MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/f
 const D = 55;                                   // głębokość pokoju (cm)
 let W, H, cmpp, hw, hh, s;
 const eye = {x:0, y:0, z:42}, eyeT = {x:0, y:0, z:42};
-let gain = 1.3, lm = null, video = null, tracking = false, lastSeen = -1e9, showPv = false, actx = null, last = 0;
+let gain = 1.3, lm = null, video = null, tracking = false, lastSeen = -1e9, showPv = true, actx = null, last = 0;
 const u = {found:false, dist:42, roll:0, bl:0, br:0, smile:0, jaw:0, brow:0};
 const o = {wake:0, curious:0, tilt:0, beak:0, tuft:0, blush:0, hop:0, z:-30, autoBlink:0, nextBlink:2000, smileT:0, lastHeart:0, lastHoot:0, lastZ:0, wasAwake:false};
 let flies = [], fx = [], stars = [];
@@ -275,14 +276,14 @@ async function initCamera(){
   video = document.createElement('video'); video.playsInline = true; video.muted = true;
   video.srcObject = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:640}, height:{ideal:480}}, audio:false});
   await video.play();
-  $('pvBtn').style.display = 'block';
+  const pvc = $('pv'); pvc.width = 200; pvc.height = Math.round(200*video.videoHeight/video.videoWidth) || 150; pvc.style.display = 'block';
 }
 let lastVT = -1;
 function track(now){
   if(!lm || !video || video.readyState < 2 || video.currentTime === lastVT) return;
   lastVT = video.currentTime;
   const r = lm.detectForVideo(video, now), f = r.faceLandmarks && r.faceLandmarks[0];
-  u.found = !!f; if(!f) return;
+  u.found = !!f; drawPv(f); if(!f) return;
   const vw = video.videoWidth, vh = video.videoHeight;
   const FL = 2*Math.tan(32.5*Math.PI/180), fovW = vw >= vh ? FL : FL*vw/vh, fovH = vw >= vh ? FL*vh/vw : FL;
   // środki tęczówek, w lustrze (1-x)
@@ -301,10 +302,21 @@ function track(now){
   sm('smile', ((bs.mouthSmileLeft || 0) + (bs.mouthSmileRight || 0))/2);
   sm('jaw', bs.jawOpen || 0); sm('brow', Math.max(0, ((bs.browInnerUp || 0) - .25)*1.6));
   lastSeen = now;
-  if(showPv){
-    const p = $('pv').getContext('2d'); p.save(); p.scale(-1, 1); p.drawImage(video, -160, 0, 160, 120); p.restore();
-    p.fillStyle = '#f6c632'; for(const q of [A, B]){ p.beginPath(); p.arc(q.x*160, q.y*120, 4, 0, 7); p.fill(); }
+}
+// podgląd kamery w rogu: czy model widzi twarz
+function drawPv(f){
+  const c = $('pv'), p = c.getContext('2d'), w = c.width, h = c.height;
+  p.save(); p.scale(-1, 1); p.drawImage(video, -w, 0, w, h); p.restore();
+  c.className = f ? 'ok' : 'no';
+  if(f){
+    p.fillStyle = 'rgba(76,208,125,.8)';
+    for(let i=0;i<468;i+=4){ p.fillRect((1 - f[i].x)*w - 1, f[i].y*h - 1, 2, 2); }
+    p.fillStyle = '#f6c632';
+    for(const k of [468, 473]){ p.beginPath(); p.arc((1 - f[k].x)*w, f[k].y*h, 4, 0, 7); p.fill(); }
   }
+  p.fillStyle = 'rgba(0,0,0,.6)'; p.fillRect(0, h - 26, w, 26);
+  p.fillStyle = f ? '#4cd07d' : '#ff6b5e'; p.font = '600 16px Barlow,sans-serif'; p.textAlign = 'center';
+  p.fillText(f ? 'twarz OK · ' + Math.round(u.dist) + ' cm' : 'brak twarzy', w/2, h - 8);
 }
 
 // bez kamery: mysz, przeciąganie palcem lub żyroskop
@@ -361,7 +373,7 @@ $('goNo').addEventListener('click', async () => {
   try{ if(window.DeviceOrientationEvent?.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch(e){}
   $('start').classList.add('hidden'); $('chips').classList.add('hidden'); $('hint').textContent = 'Przeciągnij palcem. Stuknij, by wysłać serca';
 });
-$('pvBtn').addEventListener('click', () => { showPv = !showPv; $('pv').style.display = showPv ? 'block' : 'none'; });
+$('pv').addEventListener('click', () => { showPv = !showPv; $('pv').style.opacity = showPv ? 1 : .25; });
 }
 </script>
 </body>
