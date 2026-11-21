@@ -268,7 +268,10 @@ async function initCamera(){
   $('msg').textContent = 'Ładuję model twarzy (ok. 4 MB)…';
   const vision = await import(MP + '/vision_bundle.mjs');
   const files = await vision.FilesetResolver.forVisionTasks(MP + '/wasm');
-  lm = await vision.FaceLandmarker.createFromOptions(files, {baseOptions:{modelAssetPath:MODEL, delegate:'GPU'}, runningMode:'VIDEO', numFaces:1, outputFaceBlendshapes:true});
+  const opts = d => ({baseOptions:{modelAssetPath:MODEL, delegate:d}, runningMode:'VIDEO', numFaces:1, outputFaceBlendshapes:true});
+  try{ lm = await vision.FaceLandmarker.createFromOptions(files, opts('GPU')); }
+  catch(e){ $('msg').textContent = 'GPU niedostępne, przełączam na CPU…'; lm = await vision.FaceLandmarker.createFromOptions(files, opts('CPU')); }
+  $('msg').textContent = 'Proszę o dostęp do kamery…';
   video = document.createElement('video'); video.playsInline = true; video.muted = true;
   video.srcObject = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:640}, height:{ideal:480}}, audio:false});
   await video.play();
@@ -352,7 +355,7 @@ $('gain').addEventListener('input', e => gain = +e.target.value);
 $('go').addEventListener('click', async () => {
   beep(600, 900, .08, 'triangle', .04);
   try{ await initCamera(); tracking = true; $('start').classList.add('hidden'); $('hint').textContent = HINTS[0]; }
-  catch(err){ console.log(err); $('msg').textContent = 'Kamera niedostępna. Strona musi być otwarta przez https. Na razie możesz sterować palcem.'; setTimeout(() => $('start').classList.add('hidden'), 2500); $('chips').classList.add('hidden'); }
+  catch(err){ console.log(err); $('msg').textContent = 'Błąd: ' + (err && (err.name ? err.name + ' – ' : '') + (err.message || err)) + '. Zrób zrzut ekranu i wyślij go Claude. Możesz też grać bez kamery.'; }
 });
 $('goNo').addEventListener('click', async () => {
   try{ if(window.DeviceOrientationEvent?.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch(e){}
