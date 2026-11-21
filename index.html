@@ -3,65 +3,54 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Żywe okno</title>
+<title>Okno na świat</title>
 <style>
 /*
-VOICE: nocna bajka, cicha i ciepła, z odrobiną magii
-IDEA: ekran jako okno do pokoju na wieży; ramka z holograficznej folii
-PICTURE: pokój z kredowej siatki, okrągłe okno na gwiazdy, sowa na gałęzi, świetliki wylatujące przed szybę
-COLOUR and TYPE: ciepły brąz i noc, złoto oczu, tęcza folii; Fraunces + Barlow
-LAYOUT: pełny ekran, podpowiedź u góry, wskaźniki mimiki u dołu
+VOICE: spokojny widok, złota godzina
+IDEA: ekran telefonu jako szyba okna, za którą rozciąga się krajobraz
+PICTURE: trawa tuż za szybą, drzewa, jezioro, wzgórza, góry we mgle, chmury i słońce
+COLOUR and TYPE: ciepłe niebo, zielenie gasnące w błękit z odległością; Fraunces + Barlow
+LAYOUT: pełny ekran, podpowiedź u góry, podgląd kamery w rogu
 */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Barlow:wght@400;600&display=swap');
-:root{--bg:#120f0c;--ink:#f3e9d6;--gold:#f6c632}
+:root{--ink:#fbf4e6;--gold:#f6c632}
 *{box-sizing:border-box;margin:0}
-html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;font:16px/1.45 Barlow,system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+html,body{height:100%;background:#000;color:var(--ink);overflow:hidden;font:16px/1.45 Barlow,system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
 #c{position:fixed;inset:0;width:100%;height:100%;display:block}
 .top{position:fixed;left:0;right:0;top:0;padding:max(14px,env(safe-area-inset-top)) 16px 0;text-align:center;pointer-events:none}
-#hint{font:600 19px/1.2 Fraunces,serif;text-shadow:0 2px 10px #000;transition:opacity .5s}
-#status{font-size:13px;opacity:.7;margin-top:4px}
-.chips{position:fixed;left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom));display:flex;flex-wrap:wrap;gap:6px;justify-content:center;pointer-events:none;padding:0 136px 0 12px}
-.chip{font:600 13px Barlow,sans-serif;padding:5px 10px;border-radius:14px;background:#00000070;border:1px solid #ffffff25;opacity:.55;transition:all .2s}
-.chip.on{opacity:1;background:var(--gold);color:#120f0c;border-color:var(--gold)}
-#pvBtn{display:none!important}
-#dirBtn{position:fixed;left:12px;top:max(64px,calc(env(safe-area-inset-top) + 56px));min-height:40px;padding:0 14px;border-radius:20px;border:1px solid #ffffff40;background:#00000080;color:var(--ink);font:600 14px Barlow,sans-serif}
-#pv{position:fixed;right:12px;bottom:max(12px,env(safe-area-inset-bottom));width:112px;height:auto;border-radius:12px;border:3px solid #777;display:none;background:#000;transition:border-color .2s}
+#hint{font:600 18px/1.2 Fraunces,serif;text-shadow:0 1px 8px #0008;transition:opacity 1s}
+#status{font-size:13px;margin-top:4px;text-shadow:0 1px 6px #000a}
+#dirBtn{position:fixed;left:12px;bottom:max(12px,env(safe-area-inset-bottom));min-height:40px;padding:0 14px;border-radius:20px;border:1px solid #ffffff50;background:#00000060;color:var(--ink);font:600 14px Barlow,sans-serif;display:none}
+#pv{position:fixed;right:12px;bottom:max(12px,env(safe-area-inset-bottom));width:112px;height:auto;border-radius:12px;border:3px solid #777;display:none;background:#000;transition:border-color .2s,opacity .2s}
 #pv.ok{border-color:#4cd07d}#pv.no{border-color:#e0352b}
-.screen{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:#120f0ce8}
+.screen{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:#141210e6}
 .card{max-width:400px;text-align:center}
-h1{font:600 46px/1.05 Fraunces,serif;margin-bottom:12px}
+h1{font:600 44px/1.05 Fraunces,serif;margin-bottom:12px}
 .card p{opacity:.88;margin-bottom:12px}
-.card ul{text-align:left;margin:0 auto 18px;padding-left:20px;opacity:.85;font-size:15px}
-.btn{min-height:52px;padding:0 26px;border:0;border-radius:26px;background:var(--gold);color:#120f0c;font:600 18px Barlow,sans-serif;cursor:pointer;margin:4px}
+.btn{min-height:52px;padding:0 26px;border:0;border-radius:26px;background:var(--gold);color:#141210;font:600 18px Barlow,sans-serif;cursor:pointer;margin:4px}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid #ffffff55;font-size:16px}
 .btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
-.small{font-size:13px;opacity:.6;margin-top:12px}
 .row{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:14px;font-size:14px;opacity:.85}
 input[type=range]{width:150px;accent-color:var(--gold)}
 #msg{color:var(--gold);font-size:14px;min-height:20px;margin-top:10px}
+.small{font-size:13px;opacity:.6;margin-top:12px}
 .hidden{display:none!important}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div class="top"><div id="hint">&nbsp;</div><div id="status"></div></div>
-<div class="chips" id="chips"></div>
-<canvas id="pv" width="160" height="120"></canvas>
-<button id="pvBtn" aria-label="Podgląd kamery">oczy</button>
+<canvas id="pv" width="200" height="150"></canvas>
 <button id="dirBtn" aria-label="Odwróć kierunek perspektywy">⇄ kierunek</button>
 
 <div class="screen" id="start">
   <div class="card">
-    <h1>Żywe okno</h1>
-    <p>Twój telefon staje się oknem do pokoju na wieży. Przednia kamera śledzi twoje oczy i twarz, więc pokój ma prawdziwą głębię, a sowa wie, gdzie jesteś.</p>
-    <ul>
-      <li>Ruszaj głową i zajrzyj za róg okna.</li>
-      <li>Uśmiechnij się, mrugnij, powiedz „hu!”, przechyl głowę.</li>
-      <li>Zbliż się, a sowa zrobi się ciekawska. Odejdź, a zaśnie.</li>
-    </ul>
-    <button class="btn" id="go">Obudź sowę</button>
+    <h1>Okno na świat</h1>
+    <p>Telefon staje się szybą okna. Przednia kamera śledzi twoje oczy, a krajobraz za oknem przesuwa się warstwami tak, jak w prawdziwym oknie: bliska trawa szybko, góry ledwo.</p>
+    <p>Trzymaj telefon nieruchomo i ruszaj głową, żeby wyjrzeć za krawędź.</p>
+    <button class="btn" id="go">Otwórz okno</button>
     <button class="btn ghost" id="goNo">Bez kamery</button>
-    <div class="row">Siła głębi <input type="range" id="gain" min="0.6" max="2.5" step="0.1" value="1"></div>
+    <div class="row">Siła głębi <input type="range" id="gain" min="0.5" max="2.5" step="0.1" value="1"></div>
     <div id="msg"></div>
     <p class="small">Obraz z kamery jest analizowany tylko na tym urządzeniu. Nic nie jest wysyłane ani zapisywane.</p>
   </div>
@@ -71,203 +60,155 @@ input[type=range]{width:150px;accent-color:var(--gold)}
 {
 const $ = id => document.getElementById(id);
 const cv = $('c'), ctx = cv.getContext('2d');
-const MP = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
-const MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
-const D = 55;                                   // głębokość pokoju (cm)
-let W, H, cmpp, hw, hh, s;
-const eye = {x:0, y:0, z:42}, eyeT = {x:0, y:0, z:42};
-let gain = 1, dir = -1, lm = null, video = null, tracking = false, lastSeen = -1e9, showPv = true, actx = null, last = 0;
-const u = {rx:0, ry:0, found:false, dist:42, roll:0, bl:0, br:0, smile:0, jaw:0, brow:0};
-const o = {wake:0, curious:0, tilt:0, beak:0, tuft:0, blush:0, hop:0, z:-30, autoBlink:0, nextBlink:2000, smileT:0, lastHeart:0, lastHoot:0, lastZ:0, wasAwake:false};
-let flies = [], fx = [], stars = [];
+const MP = new URL('./mediapipe', location.href).href;          // biblioteka wbudowana w projekt
+const MODEL = new URL('./model/face_landmarker.task', location.href).href;   // model wbudowany w projekt
+const EZ = 45, BY = .12;                         // BY: wysokość oczu (horyzontu) względem środka ekranu                                   // bazowa odległość oka od ekranu (cm)
+let W, H, cmpp, hw, hh, G;
+const eye = {x:0, y:0, z:EZ}, eyeT = {x:0, y:0, z:EZ};
+let gain = 1, dir = -1, lm = null, video = null, tracking = false, lastSeen = -1e9, showPv = true, last = 0, camStage = '', dist = EZ, found = false;
+let mountains = [], trees = [], grass = [], clouds = [], birds = [], flutter = [];
 
+// prosty generator liczb z ziarnem, żeby krajobraz był zawsze ten sam
+let seed = 7; const rnd = () => (seed = (seed*16807) % 2147483647)/2147483647;
+const f = z => (EZ - z)/EZ;                      // skala: rozmiar na ekranie przy patrzeniu na wprost -> rozmiar w świecie
+
+function build(){
+  seed = 7;
+  G = hh*.95;                                    // poziom ziemi pod oknem
+  const ridge = (z, n, amp, base, col) => {
+    const k = f(z), pts = [];
+    for(let i=0;i<=n;i++){
+      const sx = -hw*5 + 10*hw*i/n;
+      const h = base + amp*(.55*Math.sin(i*.9 + z) + .3*Math.sin(i*2.3 + z*.7) + .15*Math.sin(i*5.1)) + amp*.4*rnd();
+      pts.push([sx*k, -G + h*k]);
+    }
+    return {z, pts, col};
+  };
+  // im dalej, tym jaśniej i bardziej niebiesko (perspektywa powietrzna)
+  mountains = [ridge(-1400, 26, hh*.16, hh*.3, '#a9b6cc'), ridge(-650, 22, hh*.12, hh*.2, '#8197b0'), ridge(-260, 18, hh*.06, hh*.1, '#6e8f84'), ridge(-120, 16, hh*.04, hh*.05, '#5f8a5c')];
+  trees = [];
+  for(let i=0;i<34;i++){
+    const z = -40 - rnd()*rnd()*160, k = f(z);
+    trees.push({x:(rnd()*2-1)*hw*3.2*k, z, h:(hh*.1 + rnd()*hh*.12)*k, kind:rnd() < .55 ? 'pine' : 'oak', tone:rnd()});
+  }
+  trees.push({x:-hw*1.2*f(-14), z:-14, h:hh*.95*f(-14), kind:'oak', tone:.2});
+  trees.push({x:hw*1.3*f(-22), z:-22, h:hh*.6*f(-22), kind:'pine', tone:.6});
+  trees.sort((a, b) => a.z - b.z);
+  grass = Array.from({length:150}, () => { const z = -3 - rnd()*rnd()*40, k = f(z); return {x:(rnd()*2-1)*hw*1.6*k, z, h:(.14 + rnd()*.22)*hh*k*.35, ph:rnd()*7, flower: rnd() < .12 ? ['#f2d14b','#f4f0e6','#d9668a'][Math.floor(rnd()*3)] : null}; }).sort((a, b) => a.z - b.z);
+  clouds = Array.from({length:9}, () => ({x:(rnd()*2-1)*hw*6, y:hh*(.55 + rnd()*.6), z:-3000, w:hw*(.45 + rnd()*.6), sp:hw*(.006 + rnd()*.01)}));
+  birds = Array.from({length:5}, () => ({x:(rnd()*2-1)*hw*4, y:hh*(.25 + rnd()*.5), z:-90 - rnd()*200, sp:(.03 + rnd()*.03), ph:rnd()*7}));
+  flutter = Array.from({length:4}, () => ({x:(rnd()*2-1)*hw, y:-G + hh*(.2 + rnd()*.4), z:-6 - rnd()*14, ph:rnd()*7, col:['#f6c632','#f4f0e6','#e8834a'][Math.floor(rnd()*3)]}));
+}
 function resize(){
-  const dpr = Math.min(devicePixelRatio||1, 2);
-  W = innerWidth; H = innerHeight; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   cmpp = matchMedia('(pointer:coarse)').matches ? 2.54/160 : 2.54/96;
-  hw = W*cmpp/2; hh = H*cmpp/2; s = Math.min(hw, hh*0.7)*0.62;
-  stars = Array.from({length:140}, () => ({x:(Math.random()*2-1)*hw*9, y:hh*0.3 + (Math.random()*2-1)*hh*5, z:-300-Math.random()*200, r:Math.random()*1.6+.4, ph:Math.random()*7}));
-  flies = Array.from({length:26}, (_, i) => ({x:(Math.random()*2-1)*hw, y:(Math.random()*2-1)*hh, z:-D + Math.random()*(D+14), ph:Math.random()*7, sp:.4+Math.random()*.6}));
+  hw = W*cmpp/2; hh = H*cmpp/2; build();
 }
 addEventListener('resize', resize); resize();
 
-// rzut przez okno: z<0 za szybą, z>0 przed szybą (wychodzi z ekranu)
-function P(x, y, z){ const t = eye.z/(eye.z - z); return [W/2 + (eye.x + (x-eye.x)*t)/cmpp, H/2 - (eye.y + (y-eye.y)*t)/cmpp, t/cmpp]; }
-function quad(pts, fill){ ctx.beginPath(); pts.forEach((p,i) => { const q = P(...p); i ? ctx.lineTo(q[0],q[1]) : ctx.moveTo(q[0],q[1]); }); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); }
-function ell(x, y, z, rx, ry, rot, fill){ const p = P(x,y,z); ctx.beginPath(); ctx.ellipse(p[0], p[1], Math.max(.1,rx*p[2]), Math.max(.1,ry*p[2]), -rot, 0, 7); ctx.fillStyle = fill; ctx.fill(); }
-function seg(a, b){ const p = P(...a), q = P(...b); ctx.moveTo(p[0],p[1]); ctx.lineTo(q[0],q[1]); }
+// rzut przez szybę: punkt (x,y,z) za oknem (z<0) na płaszczyznę ekranu z=0, widziany z pozycji oka
+function P(x, y, z){ const t = eye.z/(eye.z - z); return [W/2 + (eye.x + (x - eye.x)*t)/cmpp, H/2 - (eye.y + (y - eye.y)*t)/cmpp, t/cmpp]; }
+function poly(pts, z, fill){ ctx.beginPath(); pts.forEach((p, i) => { const q = P(p[0], p[1], z); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.fillStyle = fill; ctx.fill(); }
 
-function beep(f1, f2, d, type='sine', vol=.14, delay=0){
-  try{
-    actx = actx || new AudioContext();
-    const t = actx.currentTime + delay, os = actx.createOscillator(), g = actx.createGain();
-    os.type = type; os.frequency.setValueAtTime(f1, t); os.frequency.exponentialRampToValueAtTime(f2, t+d);
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t+.03); g.gain.exponentialRampToValueAtTime(.001, t+d);
-    os.connect(g).connect(actx.destination); os.start(t); os.stop(t+d+.05);
-  }catch(e){}
-}
-const hoot = () => { beep(430, 380, .28, 'sine', .2); beep(400, 340, .45, 'sine', .2, .38); };
-const chirp = () => { beep(900, 1600, .12, 'triangle', .08); beep(1200, 2000, .1, 'triangle', .06, .13); };
-
-// ---------- scena ----------
-const win = {x:0, r:0}; // okrągłe okno w tylnej ścianie
-function drawRoom(now){
-  // niebo i gwiazdy daleko za oknem
-  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0b1430'); g.addColorStop(1, '#1b2350');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  for(const st of stars){ const p = P(st.x, st.y, st.z); ctx.globalAlpha = .5 + .5*Math.sin(now/700 + st.ph); ctx.fillStyle = '#fff'; ctx.fillRect(p[0], p[1], st.r, st.r); }
-  ctx.globalAlpha = 1;
-  const m = P(hw*1.3, hh*1.2, -280);
-  ctx.fillStyle = '#f7ecc8'; ctx.beginPath(); ctx.arc(m[0], m[1], hw*1.1*m[2], 0, 7); ctx.fill();
-  ctx.fillStyle = '#e6d7a8'; ctx.beginPath(); ctx.arc(m[0]-hw*.3*m[2], m[1]+hw*.2*m[2], hw*.22*m[2], 0, 7); ctx.fill();
-  // tylna ściana z okrągłym otworem
-  const wy = hh*0.5, wr = Math.min(hw, hh)*0.7;
-  const c = [P(-hw,-hh,-D),P(hw,-hh,-D),P(hw,hh,-D),P(-hw,hh,-D)], wc = P(0, wy, -D);
-  ctx.beginPath(); ctx.moveTo(c[0][0],c[0][1]); for(const q of [c[1],c[2],c[3]]) ctx.lineTo(q[0],q[1]); ctx.closePath();
-  ctx.moveTo(wc[0]+wr*wc[2], wc[1]); ctx.arc(wc[0], wc[1], wr*wc[2], 0, 7, true);
-  ctx.fillStyle = '#3a2e24'; ctx.fill('evenodd');
-  ctx.strokeStyle = '#6b5640'; ctx.lineWidth = Math.max(2, .25*wc[2]); ctx.beginPath(); ctx.arc(wc[0], wc[1], wr*wc[2], 0, 7); ctx.stroke();
-  ctx.lineWidth = 1; ctx.beginPath(); seg([-wr,wy,-D],[wr,wy,-D]); seg([0,wy-wr,-D],[0,wy+wr,-D]); ctx.stroke();
-  // ściany
-  quad([[-hw,-hh,0],[hw,-hh,0],[hw,-hh,-D],[-hw,-hh,-D]], '#241b14');   // podłoga
-  quad([[-hw,hh,0],[hw,hh,0],[hw,hh,-D],[-hw,hh,-D]], '#1c1611');       // sufit
-  quad([[-hw,-hh,0],[-hw,hh,0],[-hw,hh,-D],[-hw,-hh,-D]], '#2e241b');   // lewa
-  quad([[hw,-hh,0],[hw,hh,0],[hw,hh,-D],[hw,-hh,-D]], '#2b2119');       // prawa
-  // światło księżyca na podłodze
-  const lp = P(0, -hh, -D*0.55);
-  const lg = ctx.createRadialGradient(lp[0], lp[1], 0, lp[0], lp[1], hw*1.4*lp[2]);
-  lg.addColorStop(0, 'rgba(190,200,255,.16)'); lg.addColorStop(1, 'rgba(190,200,255,0)');
-  ctx.fillStyle = lg; ctx.fillRect(0, 0, W, H);
-  // kredowa siatka: to ona robi głębię
-  ctx.strokeStyle = 'rgba(243,233,214,.13)'; ctx.lineWidth = 1; ctx.beginPath();
-  for(let i=1;i<10;i++){ const z = -D*i/10; seg([-hw,-hh,z],[hw,-hh,z]); seg([-hw,hh,z],[hw,hh,z]); seg([-hw,-hh,z],[-hw,hh,z]); seg([hw,-hh,z],[hw,hh,z]); }
-  for(let i=1;i<6;i++){ const x = -hw + 2*hw*i/6, y = -hh + 2*hh*i/6; seg([x,-hh,0],[x,-hh,-D]); seg([x,hh,0],[x,hh,-D]); seg([-hw,y,0],[-hw,y,-D]); seg([hw,y,0],[hw,y,-D]); }
-  ctx.stroke();
-  // gałąź
-  const by = -hh*0.32 - s*0.72, bz = -31;
-  quad([[-hw,by,bz+.8],[hw,by-.2*s,bz+.8],[hw,by-.42*s,bz+.8],[-hw,by-.22*s,bz+.8]], '#5a3f28');
-  quad([[-hw,by-.22*s,bz+.8],[hw,by-.42*s,bz+.8],[hw,by-.42*s,bz-1.5],[-hw,by-.22*s,bz-1.5]], '#3d2a1a');
-}
-
-function drawOwl(now){
-  const ox = 0, oy = -hh*0.32 + o.hop*s*.25, z = o.z + o.curious*7;
-  const k = 1 + o.curious*.08, S = s*k;
-  const body = '#8a6a4a', dark = '#6e5238';
-  // skrzydła i tułów – osobne warstwy, osobna paralaksa
-  ell(ox - .52*S, oy - .05*S, z - 1.2, .26*S, .6*S, .25, dark);
-  ell(ox + .52*S, oy - .05*S, z - 1.2, .26*S, .6*S, -.25, dark);
-  ell(ox, oy, z, .58*S, .72*S, 0, body);
-  ell(ox, oy - .15*S, z + 1.2, .38*S, .5*S, 0, '#c9a77c');
-  for(let i=0;i<3;i++) for(let j=-1;j<=1;j++) ell(ox + j*.16*S + (i%2)*.08*S, oy - .02*S - i*.18*S, z + 1.4, .05*S, .035*S, 0, '#a5845e');
-  // stopy
-  ell(ox - .18*S, oy - .72*S, z + 1.2, .12*S, .06*S, 0, '#e09a3a'); ell(ox + .18*S, oy - .72*S, z + 1.2, .12*S, .06*S, 0, '#e09a3a');
-  // głowa z przechyłem
-  const a = o.tilt, ca = Math.cos(a), sa = Math.sin(a), hx = ox, hy = oy + .72*S;
-  const L = (lx, ly) => [hx + lx*ca - ly*sa, hy + lx*sa + ly*ca];
-  const t1 = .35 + o.tuft*.18;
-  for(const sd of [-1, 1]){
-    const p1 = L(sd*.28*S, .32*S), p2 = L(sd*.5*S, (.42+t1)*S), p3 = L(sd*.1*S, .42*S);
-    quad([[...p1, z+.6],[...p2, z+.6],[...p3, z+.6]], body);
-  }
-  ell(...L(0,0), z + .8, .56*S, .5*S, a, body);
-  ell(...L(-.21*S, .02*S), z + 2.2, .27*S, .3*S, a, '#e8d3ad');
-  ell(...L(.21*S, .02*S), z + 2.2, .27*S, .3*S, a, '#e8d3ad');
-  if(o.blush > .02){ ctx.globalAlpha = o.blush*.7; ell(...L(-.36*S, -.2*S), z + 2.4, .1*S, .06*S, a, '#e86a6a'); ell(...L(.36*S, -.2*S), z + 2.4, .1*S, .06*S, a, '#e86a6a'); ctx.globalAlpha = 1; }
-  // oczy: źrenice celują w twoje prawdziwe oczy w 3D
-  const closeSleep = 1 - o.wake;
-  const close = [Math.max(closeSleep, o.autoBlink, u.found ? u.bl : 0), Math.max(closeSleep, o.autoBlink, u.found ? u.br : 0)];
-  [-1, 1].forEach((sd, i) => {
-    const [ex, ey] = L(sd*.21*S, .04*S), ez = z + 3, open = 1 - Math.min(1, close[i]);
-    const R = .16*S*(1 + o.curious*.25);
-    if(open > .12){
-      ell(ex, ey, ez, R, R*open, a, '#f6c632');
-      const vx = u.rx - ex, vy = u.ry - ey, vz = eye.z - ez;                 // sowa patrzy na twoją prawdziwą pozycję
-      const px = Math.max(-1, Math.min(1, vx/vz*4))*R*.45, py = Math.max(-1, Math.min(1, vy/vz*4))*R*.45*open;
-      ell(ex + px, ey + py, ez + .6, R*.52, R*.52*open, 0, '#120c08');
-      ell(ex + px + R*.2, ey + py + R*.2*open, ez + .8, R*.13, R*.13*open, 0, '#fff');
-    } else {
-      const p = P(ex, ey, ez); ctx.strokeStyle = '#3a2a1c'; ctx.lineWidth = Math.max(1.5, .03*S*p[2]);
-      ctx.beginPath(); ctx.ellipse(p[0], p[1], R*p[2], R*.4*p[2], -a, .15, Math.PI - .15); ctx.stroke();
+function draw(now){
+  const hz = P(0, -G, -1e6)[1];                                    // linia horyzontu na ekranie
+  // niebo
+  const sky = ctx.createLinearGradient(0, 0, 0, hz);
+  sky.addColorStop(0, '#5b86c4'); sky.addColorStop(.6, '#a9c0d9'); sky.addColorStop(1, '#f6dcae');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, Math.max(0, hz) + 2);
+  // słońce bardzo daleko
+  const sn = P(hw*.55*f(-1e4), -G + hh*.75*f(-1e4), -1e4), sr = hh*.09*f(-1e4)*sn[2];
+  const sg = ctx.createRadialGradient(sn[0], sn[1], 0, sn[0], sn[1], sr*7);
+  sg.addColorStop(0, 'rgba(255,246,214,1)'); sg.addColorStop(.14, 'rgba(255,240,200,.9)'); sg.addColorStop(.15, 'rgba(255,226,170,.35)'); sg.addColorStop(1, 'rgba(255,220,160,0)');
+  ctx.fillStyle = sg; ctx.fillRect(sn[0] - sr*7, sn[1] - sr*7, sr*14, sr*14);
+  // chmury
+  for(const c of clouds){
+    c.x += c.sp*f(c.z)*.016; if(c.x > hw*7*f(c.z)/f(-3000)) c.x = -hw*7;
+    const k = f(c.z);
+    ctx.fillStyle = 'rgba(255,250,240,.75)';
+    for(let i=0;i<4;i++){
+      const p = P(c.x*k + (i - 1.5)*c.w*.42*k, -G + c.y*k + (i%2 ? .1 : 0)*c.w*k, c.z);
+      ctx.beginPath(); ctx.ellipse(p[0], p[1], c.w*.38*k*p[2], c.w*.16*k*p[2], 0, 0, 7); ctx.fill();
     }
-  });
-  // dziób, otwiera się gdy otwierasz usta
-  const b1 = L(-.07*S, -.1*S), b2 = L(.07*S, -.1*S), b3 = L(0, (-.27 - o.beak*.05)*S), b4 = L(0, (-.12 - o.beak*.16)*S);
-  quad([[...b1, z+3.4],[...b2, z+3.4],[...b3, z+3.4]], '#e09a3a');
-  if(o.beak > .1) quad([[...L(-.05*S,-.14*S), z+3.3],[...L(.05*S,-.14*S), z+3.3],[...b4, z+3.3]], '#3a1d10');
-  return {hx, hy, z};
-}
-
-function heart(x, y, r){ ctx.beginPath(); ctx.moveTo(x, y + r*.35); ctx.bezierCurveTo(x - r*1.1, y - r*.5, x - r*.4, y - r*1.2, x, y - r*.45); ctx.bezierCurveTo(x + r*.4, y - r*1.2, x + r*1.1, y - r*.5, x, y + r*.35); ctx.fill(); }
-
-function drawFx(list){
-  for(const f of list){
-    const p = P(f.x, f.y, f.z);
-    ctx.globalAlpha = Math.max(0, Math.min(1, f.life*1.5));
-    if(f.k === 'heart'){ ctx.fillStyle = f.col; heart(p[0], p[1], f.r*p[2]); }
-    else if(f.k === 'spark'){ ctx.fillStyle = f.col; ctx.fillRect(p[0]-f.r*p[2]/2, p[1]-f.r*p[2]/2, f.r*p[2], f.r*p[2]); }
-    else { ctx.fillStyle = '#f3e9d6'; ctx.font = `600 ${Math.max(10, f.r*p[2])}px Fraunces,serif`; ctx.textAlign = 'center'; ctx.fillText(f.txt, p[0], p[1]); }
   }
-  ctx.globalAlpha = 1;
-}
-function drawFlies(list, now){
-  for(const f of list){
-    const p = P(f.x, f.y, f.z), r = Math.min(7, .18*p[2]), a = .55 + .45*Math.sin(now/500*f.sp + f.ph);
-    const g = ctx.createRadialGradient(p[0], p[1], 0, p[0], p[1], r*4);
-    g.addColorStop(0, `rgba(255,236,150,${a})`); g.addColorStop(1, 'rgba(255,236,150,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p[0], p[1], r*4, 0, 7); ctx.fill();
+  // ziemia aż po horyzont
+  const gr = ctx.createLinearGradient(0, hz, 0, H);
+  gr.addColorStop(0, '#c9c39a'); gr.addColorStop(.12, '#8fa66d'); gr.addColorStop(1, '#3f6a2e');
+  ctx.beginPath(); [[-1e4,-2],[1e4,-2],[1e4,-1e6],[-1e4,-1e6]].forEach((q, i) => { const p = P(q[0], -G, q[1]); i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); });
+  ctx.fillStyle = gr; ctx.fill();
+  // góry i wzgórza, od najdalszych
+  for(const m of mountains){
+    const k = f(m.z), pts = [[m.pts[0][0], -G], ...m.pts, [m.pts[m.pts.length - 1][0], -G]];
+    poly(pts, m.z, m.col);
+    if(m.z < -1000){ // śnieg na szczytach
+      ctx.fillStyle = 'rgba(255,255,255,.55)';
+      for(let i=1;i<m.pts.length-1;i++){ const [x, y] = m.pts[i]; if(y > m.pts[i-1][1] && y > m.pts[i+1][1]){ const a = P(x, y, m.z), b = P(x - hw*.12*k, y - hh*.06*k, m.z), c = P(x + hw*.12*k, y - hh*.06*k, m.z); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.fill(); } }
+    }
+    if(m.z === -260){ // jezioro przed wzgórzami
+      const lz1 = -150, lz2 = -230;
+      const lake = []; for(let i=0;i<=20;i++){ const a = i/20*Math.PI*2; const z = (lz1 + lz2)/2 + Math.sin(a)*(lz2 - lz1)/2; lake.push(P(Math.cos(a)*hw*2.2*f(z) + hw*.4*f(z), -G, z)); }
+      ctx.beginPath(); lake.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+      const lg = ctx.createLinearGradient(0, lake[15][1], 0, lake[5][1]); lg.addColorStop(0, '#d9dfe0'); lg.addColorStop(1, '#7fa2bb');
+      ctx.fillStyle = lg; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1;
+      for(let i=0;i<6;i++){ const z = lz1 - 10 - i*12, a = P(-hw*.2*f(z) + Math.sin(now/1300 + i)*hw*.2*f(z), -G, z), b = P(hw*.5*f(z) + Math.sin(now/1300 + i)*hw*.2*f(z), -G, z); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+    }
   }
-}
-
-// holograficzna rama: kolor zależy od kąta, pod którym patrzysz
-function drawFrame(now){
-  const dz = -3.2, walls = [
-    [[-hw,-hh,0],[hw,-hh,0],[hw,-hh,dz],[-hw,-hh,dz]], [[-hw,hh,0],[hw,hh,0],[hw,hh,dz],[-hw,hh,dz]],
-    [[-hw,-hh,0],[-hw,hh,0],[-hw,hh,dz],[-hw,-hh,dz]], [[hw,-hh,0],[hw,hh,0],[hw,hh,dz],[hw,-hh,dz]]];
-  walls.forEach((w, i) => {
-    const a = P(...w[0]), b = P(...w[1]);
-    const g = ctx.createLinearGradient(a[0], a[1], b[0], b[1]);
-    const h0 = eye.x*22 + eye.y*14 + i*70 + now/80;
-    for(let j=0;j<=6;j++) g.addColorStop(j/6, `hsla(${h0 + j*55},85%,66%,.85)`);
-    quad(w, g);
-  });
-  // odblask na szkle przesuwa się przeciwnie do głowy
-  const sx = W/2 - eye.x/cmpp*1.6, gl = ctx.createLinearGradient(sx - W*.5, 0, sx + W*.5, H);
-  gl.addColorStop(.42, 'rgba(255,255,255,0)'); gl.addColorStop(.5, 'rgba(255,255,255,.07)'); gl.addColorStop(.58, 'rgba(255,255,255,0)');
-  ctx.fillStyle = gl; ctx.fillRect(0, 0, W, H);
-}
-
-// ---------- zachowanie sowy ----------
-function behave(now, dt){
-  const awake = !tracking ? true : (now - lastSeen < 2500);
-  o.wake += ((awake ? 1 : 0) - o.wake)*Math.min(1, dt*(awake ? 6 : 1.2));
-  if(awake && !o.wasAwake && o.wake < .5){ o.hop = 1; chirp(); burst('spark', 10); }
-  o.wasAwake = awake;
-  o.hop = Math.max(0, o.hop - dt*3);
-  const close = tracking && u.found && u.dist < 30;
-  o.curious += ((close ? 1 : 0) - o.curious)*Math.min(1, dt*3);
-  o.tilt += (((u.found ? u.roll : Math.sin(now/2300)*.08) + u.brow*.25) - o.tilt)*Math.min(1, dt*5);
-  o.tuft += (u.brow - o.tuft)*Math.min(1, dt*8);
-  o.beak += (Math.min(1, u.jaw*1.6) - o.beak)*Math.min(1, dt*12);
-  if(now > o.nextBlink){ o.autoBlink = 1; o.nextBlink = now + 2500 + Math.random()*3000; }
-  o.autoBlink = Math.max(0, o.autoBlink - dt*7);
-  // uśmiech: serca wylatują z ekranu w twoją stronę
-  if(u.smile > .45){ o.smileT += dt; if(o.smileT > .25 && now - o.lastHeart > 1300){ o.lastHeart = now; burst('heart', 7); chirp(); } } else o.smileT = 0;
-  o.blush += ((u.smile > .45 ? 1 : 0) - o.blush)*Math.min(1, dt*4);
-  if(u.jaw > .45 && now - o.lastHoot > 1600 && o.wake > .8){ o.lastHoot = now; hoot(); fx.push({k:'txt', txt:'hu-hu!', x:s*.9, y:-hh*.18 + s*1.5, z:o.z + 4, vx:0, vy:3, vz:4, r:1.1, life:1.4}); }
-  if(o.wake < .3 && now - o.lastZ > 1100){ o.lastZ = now; fx.push({k:'txt', txt:'z', x:s*.5, y:-hh*.18 + s*1.2, z:o.z + 2, vx:1.5, vy:2.5, vz:.5, r:.9 + Math.random()*.5, life:2}); }
-}
-function burst(k, n){
-  const hy = -hh*.18 + .72*s;
-  for(let i=0;i<n;i++){
-    const tx = eye.x*.6 + (Math.random()*2-1)*hw*1.2, ty = eye.y*.4 + (Math.random()*2-1)*hh*.6;
-    const T = 1.3 + Math.random()*.6, z0 = o.z + 4, z1 = 14 + Math.random()*10;
-    fx.push({k, x:(Math.random()-.5)*s, y:hy, z:z0, vx:(tx)/T, vy:(ty - hy)/T, vz:(z1 - z0)/T,
-             r: k === 'heart' ? .5 + Math.random()*.4 : .25, life:T, col: k === 'heart' ? ['#e86a6a','#f39ab0','#f6c632'][i%3] : '#fff3b0'});
+  // ptaki
+  ctx.strokeStyle = '#2b2a2a'; ctx.lineCap = 'round';
+  for(const b of birds){
+    b.x += b.sp*f(b.z)*hw*.016; if(b.x > hw*4) b.x = -hw*4;
+    const k = f(b.z), p = P(b.x*k, -G + b.y*k + hh*.65*k, b.z), s = hw*.035*k*p[2], fl = Math.sin(now/120 + b.ph)*s*.6;
+    ctx.lineWidth = Math.max(1, s*.25); ctx.beginPath(); ctx.moveTo(p[0] - s, p[1] - fl); ctx.lineTo(p[0], p[1]); ctx.lineTo(p[0] + s, p[1] - fl); ctx.stroke();
   }
+  // drzewa od najdalszych
+  for(const t of trees){
+    const fog = Math.min(.55, (-t.z - 20)/220);
+    const base = P(t.x, -G, t.z), top = P(t.x, -G + t.h, t.z), sc = base[2], hpx = base[1] - top[1];
+    const sway = Math.sin(now/1700 + t.x)*hpx*.012;
+    ctx.fillStyle = mix('#4a3626', '#b8bfa8', fog); ctx.fillRect(base[0] - hpx*.025, base[1] - hpx*.35, hpx*.05, hpx*.35);
+    if(t.kind === 'pine'){
+      ctx.fillStyle = mix(t.tone > .5 ? '#2c4f2e' : '#24442a', '#a9b8a2', fog);
+      for(let i=0;i<3;i++){ const y0 = base[1] - hpx*(.18 + i*.24), w = hpx*(.3 - i*.07); ctx.beginPath(); ctx.moveTo(base[0] - w + sway*i, y0); ctx.lineTo(base[0] + w + sway*i, y0); ctx.lineTo(base[0] + sway*(i + 1), y0 - hpx*.42); ctx.fill(); }
+    } else {
+      const c1 = mix(t.tone > .5 ? '#3f6b35' : '#4a7838', '#b3bfa0', fog), c2 = mix('#5d8a45', '#c2c9a8', fog);
+      for(const [dx, dy, r, c] of [[-.16, .55, .24, c1], [.16, .58, .24, c1], [0, .72, .27, c1], [-.05, .8, .16, c2], [.1, .66, .14, c2]]){
+        ctx.fillStyle = c; ctx.beginPath(); ctx.arc(base[0] + dx*hpx + sway, base[1] - dy*hpx, r*hpx, 0, 7); ctx.fill();
+      }
+    }
+  }
+  // trawa i kwiaty tuż za szybą
+  ctx.lineCap = 'round';
+  for(const g of grass){
+    const b = P(g.x, -G, g.z), tp = P(g.x + Math.sin(now/900 + g.ph)*g.h*.25, -G + g.h, g.z);
+    ctx.strokeStyle = g.z > -12 ? '#2f5a24' : '#4d7a35'; ctx.lineWidth = Math.max(1, .06*b[2]);
+    for(const o of [-1, 0, 1]){ ctx.beginPath(); ctx.moveTo(b[0] + o*.08*b[2], b[1]); ctx.quadraticCurveTo(b[0] + o*.05*b[2], (b[1] + tp[1])/2, tp[0] + o*.15*b[2], tp[1] + Math.abs(o)*.1*(b[1] - tp[1])); ctx.stroke(); }
+    if(g.flower){ ctx.fillStyle = g.flower; ctx.beginPath(); ctx.arc(tp[0], tp[1], Math.max(1.5, .09*b[2]), 0, 7); ctx.fill(); }
+  }
+  // motyle
+  for(const m of flutter){
+    m.x += Math.sin(now/1400 + m.ph)*.02; m.y += Math.cos(now/1100 + m.ph)*.01; m.z += Math.sin(now/2000 + m.ph)*.03;
+    const p = P(m.x, m.y, m.z), s = .18*p[2], wv = Math.abs(Math.sin(now/90 + m.ph));
+    ctx.fillStyle = m.col; ctx.beginPath(); ctx.ellipse(p[0] - s*.5, p[1], s*.6*wv + .5, s*.45, 0, 0, 7); ctx.ellipse(p[0] + s*.5, p[1], s*.6*wv + .5, s*.45, 0, 0, 7); ctx.fill();
+  }
+  // lekka mgiełka przy horyzoncie
+  const haze = ctx.createLinearGradient(0, hz - H*.12, 0, hz + H*.06);
+  haze.addColorStop(0, 'rgba(246,224,184,0)'); haze.addColorStop(.6, 'rgba(246,224,184,.35)'); haze.addColorStop(1, 'rgba(246,224,184,0)');
+  ctx.fillStyle = haze; ctx.fillRect(0, hz - H*.12, W, H*.18);
+  // cienka głębokość ościeżnicy, bez kolorowej ramy: tylko cień przy krawędziach
+  const dz = -1.2, side = (pts, col) => { ctx.beginPath(); pts.forEach((q, i) => { const p = P(...q); i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); };
+  side([[-hw,-hh,0],[hw,-hh,0],[hw,-hh,dz],[-hw,-hh,dz]], '#1b1a18');
+  side([[-hw,hh,0],[hw,hh,0],[hw,hh,dz],[-hw,hh,dz]], '#262420');
+  side([[-hw,-hh,0],[-hw,hh,0],[-hw,hh,dz],[-hw,-hh,dz]], '#211f1c');
+  side([[hw,-hh,0],[hw,hh,0],[hw,hh,dz],[hw,-hh,dz]], '#211f1c');
+}
+function mix(a, b, t){
+  const p = s => [1, 3, 5].map(i => parseInt(s.slice(i, i + 2), 16)), A = p(a), B = p(b);
+  return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v)*t)).join(',')})`;
 }
 
-// ---------- śledzenie twarzy (MediaPipe Face Landmarker, lokalnie) ----------
-let camStage = '';
+// ---------- śledzenie oczu (MediaPipe Face Landmarker, lokalnie) ----------
 async function startCam(){
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
     throw new Error('ta przeglądarka nie daje dostępu do kamery. Otwórz link w Safari lub Chrome, nie w aplikacji (Messenger, GitHub, Claude)');
@@ -275,7 +216,7 @@ async function startCam(){
   video = document.createElement('video');
   video.setAttribute('playsinline', ''); video.setAttribute('autoplay', ''); video.muted = true; video.playsInline = true;
   video.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none';
-  document.body.appendChild(video);                                    // iOS aktualizuje klatki tylko gdy wideo jest w DOM
+  document.body.appendChild(video);                       // iOS odświeża klatki tylko gdy wideo jest w DOM
   video.srcObject = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:640}, height:{ideal:480}}, audio:false});
   await video.play();
   await new Promise(r => video.videoWidth ? r() : video.addEventListener('loadedmetadata', r, {once:true}));
@@ -285,7 +226,7 @@ async function loadModel(){
   camStage = 'ładuję model…';
   const vision = await import(MP + '/vision_bundle.mjs');
   const files = await vision.FilesetResolver.forVisionTasks(MP + '/wasm');
-  const opts = d => ({baseOptions:{modelAssetPath:MODEL, delegate:d}, runningMode:'VIDEO', numFaces:1, outputFaceBlendshapes:true});
+  const opts = d => ({baseOptions:{modelAssetPath:MODEL, delegate:d}, runningMode:'VIDEO', numFaces:1});
   try{ lm = await vision.FaceLandmarker.createFromOptions(files, opts('GPU')); }
   catch(e){ camStage = 'model na CPU…'; lm = await vision.FaceLandmarker.createFromOptions(files, opts('CPU')); }
   camStage = '';
@@ -293,104 +234,65 @@ async function loadModel(){
 let lastVT = -1;
 function track(now){
   if(!video || video.readyState < 2 || video.currentTime === lastVT) return;
-  if(!lm){ lastVT = video.currentTime; drawPv(null); return; }
   lastVT = video.currentTime;
-  const r = lm.detectForVideo(video, now), f = r.faceLandmarks && r.faceLandmarks[0];
-  u.found = !!f; drawPv(f); if(!f) return;
+  if(!lm){ drawPv(null); return; }
+  const r = lm.detectForVideo(video, now), fc = r.faceLandmarks && r.faceLandmarks[0];
+  found = !!fc; drawPv(fc); if(!fc) return;
   const vw = video.videoWidth, vh = video.videoHeight;
   const FL = 2*Math.tan(32.5*Math.PI/180), fovW = vw >= vh ? FL : FL*vw/vh, fovH = vw >= vh ? FL*vh/vw : FL;
-  // środki tęczówek, w lustrze (1-x)
-  let A = {x:1 - f[468].x, y:f[468].y}, B = {x:1 - f[473].x, y:f[473].y};
-  if(A.x > B.x) [A, B] = [B, A];                                       // A = lewa strona ekranu
+  const A = {x:1 - fc[468].x, y:fc[468].y}, B = {x:1 - fc[473].x, y:fc[473].y};   // tęczówki, w lustrze
   const ipd = Math.hypot((B.x - A.x)*vw, (B.y - A.y)*vh)/vw;
-  const dist = Math.min(90, Math.max(15, 6.3/(ipd*fovW)));
-  const mx = (A.x + B.x)/2, my = (A.y + B.y)/2;
-  const hx = (mx - .5)*fovW*dist, hy = -(my - .5)*fovH*dist;          // prawdziwe przesunięcie głowy (cm)
-  u.rx = hx; u.ry = hy + hh;
-  eyeT.x = dir*hx*gain;                                                // dir=-1: głowa w prawo, perspektywa w lewo
-  eyeT.y = dir*hy*gain + hh*.5;
-  eyeT.z = dist; u.dist = dist;
-  u.roll = Math.atan2(-(B.y - A.y)*vh, (B.x - A.x)*vw);
-  const bs = {}; (r.faceBlendshapes?.[0]?.categories || []).forEach(c => bs[c.categoryName] = c.score);
-  const sm = (k, v) => u[k] += (v - u[k])*.5;
-  sm('bl', (bs.eyeBlinkLeft || 0) > .5 ? 1 : 0); sm('br', (bs.eyeBlinkRight || 0) > .5 ? 1 : 0);
-  sm('smile', ((bs.mouthSmileLeft || 0) + (bs.mouthSmileRight || 0))/2);
-  sm('jaw', bs.jawOpen || 0); sm('brow', Math.max(0, ((bs.browInnerUp || 0) - .25)*1.6));
+  dist = Math.min(90, Math.max(15, 6.3/(ipd*fovW)));
+  const hx = ((A.x + B.x)/2 - .5)*fovW*dist, hy = -((A.y + B.y)/2 - .5)*fovH*dist;
+  eyeT.x = dir*hx*gain;                                   // dir=-1: głowa w prawo, widok w lewo
+  eyeT.y = dir*hy*gain + hh*BY;
+  eyeT.z = dist;
   lastSeen = now;
 }
-// podgląd kamery w rogu: czy model widzi twarz
-function drawPv(f){
+function drawPv(fc){
+  if(!showPv) return;
   const c = $('pv'), p = c.getContext('2d'), w = c.width, h = c.height;
   p.save(); p.scale(-1, 1); p.drawImage(video, -w, 0, w, h); p.restore();
-  c.className = f ? 'ok' : camStage ? '' : 'no';
-  if(f){
-    p.fillStyle = 'rgba(76,208,125,.8)';
-    for(let i=0;i<468;i+=4){ p.fillRect((1 - f[i].x)*w - 1, f[i].y*h - 1, 2, 2); }
-    p.fillStyle = '#f6c632';
-    for(const k of [468, 473]){ p.beginPath(); p.arc((1 - f[k].x)*w, f[k].y*h, 4, 0, 7); p.fill(); }
+  c.className = fc ? 'ok' : camStage ? '' : 'no';
+  if(fc){
+    p.fillStyle = 'rgba(76,208,125,.8)'; for(let i=0;i<468;i+=4) p.fillRect((1 - fc[i].x)*w - 1, fc[i].y*h - 1, 2, 2);
+    p.fillStyle = '#f6c632'; for(const k of [468, 473]){ p.beginPath(); p.arc((1 - fc[k].x)*w, fc[k].y*h, 4, 0, 7); p.fill(); }
   }
   p.fillStyle = 'rgba(0,0,0,.6)'; p.fillRect(0, h - 26, w, 26);
-  p.fillStyle = f ? '#4cd07d' : camStage ? '#f6c632' : '#ff6b5e'; p.font = '600 16px Barlow,sans-serif'; p.textAlign = 'center';
-  p.fillText(f ? 'twarz OK · ' + Math.round(u.dist) + ' cm' : camStage || 'brak twarzy', w/2, h - 8);
+  p.fillStyle = fc ? '#4cd07d' : camStage ? '#f6c632' : '#ff6b5e'; p.font = '600 16px Barlow,sans-serif'; p.textAlign = 'center';
+  p.fillText(fc ? 'twarz OK · ' + Math.round(dist) + ' cm' : camStage || 'brak twarzy', w/2, h - 8);
 }
 
 // bez kamery: mysz, przeciąganie palcem lub żyroskop
-addEventListener('pointermove', e => { if(tracking || (e.pointerType !== 'mouse' && !e.buttons)) return; eyeT.x = (e.clientX/W - .5)*2*hw*gain*1.5; eyeT.y = -(e.clientY/H - .5)*2*hh*gain; eyeT.z = 42; u.rx = eyeT.x; u.ry = eyeT.y; });
-addEventListener('deviceorientation', e => { if(tracking || e.gamma == null) return; eyeT.x = -Math.max(-30, Math.min(30, e.gamma))/30*hw*2*gain; eyeT.y = Math.max(-30, Math.min(30, e.beta - 45))/30*hh*gain; eyeT.z = 42; });
-let lastTap = 0;
-cv.addEventListener('pointerdown', e => {
-  const now = performance.now();
-  if(now - lastTap < 320){ hoot(); o.beak = 1; fx.push({k:'txt', txt:'hu-hu!', x:s*.9, y:-hh*.18 + s*1.5, z:o.z + 4, vx:0, vy:3, vz:4, r:1.1, life:1.4}); }
-  else { burst('heart', 6); chirp(); o.blush = 1; }
-  lastTap = now;
-});
-
-// ---------- podpowiedzi i wskaźniki ----------
-const HINTS = ['Rusz głową i zajrzyj za róg okna', 'Uśmiechnij się do sowy', 'Mrugnij jednym okiem', 'Powiedz „hu!”', 'Przechyl głowę', 'Unieś brwi', 'Zbliż się do ekranu'];
-let hintI = 0;
-setInterval(() => { const h = $('hint'); h.style.opacity = 0; setTimeout(() => { hintI = (hintI + 1) % HINTS.length; h.textContent = tracking ? HINTS[hintI] : 'Przeciągnij palcem. Stuknij, by wysłać serca'; h.style.opacity = 1; }, 500); }, 4200);
-const CH = [['uśmiech', () => u.smile > .45], ['mrugnięcie', () => u.bl > .5 || u.br > .5], ['usta', () => u.jaw > .45], ['brwi', () => u.brow > .4], ['przechył', () => Math.abs(u.roll) > .12], ['blisko', () => u.dist < 30]];
-$('chips').innerHTML = CH.map((c, i) => `<span class="chip" id="ch${i}">${c[0]}</span>`).join('');
+addEventListener('pointermove', e => { if(tracking || (e.pointerType !== 'mouse' && !e.buttons)) return; eyeT.x = dir*(e.clientX/W - .5)*2*hw*gain*2; eyeT.y = dir*(e.clientY/H - .5)*-2*hh*gain + hh*BY; eyeT.z = EZ; });
+addEventListener('deviceorientation', e => { if(tracking || e.gamma == null) return; eyeT.x = Math.max(-30, Math.min(30, e.gamma))/30*hw*2*gain; eyeT.y = -Math.max(-30, Math.min(30, e.beta - 45))/30*hh*gain + hh*BY; eyeT.z = EZ; });
 
 function frame(now){
   const dt = Math.min(.05, (now - (last || now))/1000); last = now;
-  if(tracking){ track(now); if(now - lastSeen > 700){ u.found = false; u.smile = u.jaw = u.brow = u.bl = u.br = 0; eyeT.x *= .97; } }
+  if(tracking){ track(now); if(now - lastSeen > 900){ eyeT.x *= .97; eyeT.y += (hh*BY - eyeT.y)*.03; } }
   const a = 1 - Math.pow(.0004, dt);
   eye.x += (eyeT.x - eye.x)*a; eye.y += (eyeT.y - eye.y)*a; eye.z += (eyeT.z - eye.z)*a;
-  behave(now, dt);
-  for(const f of flies){ f.x += Math.sin(now/1500*f.sp + f.ph)*dt*.8; f.y += Math.cos(now/1900*f.sp + f.ph)*dt*.6; f.z += Math.sin(now/2600*f.sp + f.ph*2)*dt*2.4;
-    if(Math.abs(f.x) > hw) f.x *= .98; if(Math.abs(f.y) > hh) f.y *= .98; f.z = Math.max(-D + 2, Math.min(8, f.z)); }
-  for(const f of fx){ f.x += f.vx*dt; f.y += f.vy*dt; f.z += f.vz*dt; f.life -= dt; if(f.k === 'heart') f.vy += Math.sin(now/200 + f.r*9)*dt*3; }
-  fx = fx.filter(f => f.life > 0 && f.z < eye.z - 6);
-
-  drawRoom(now);
-  drawFlies(flies.filter(f => f.z < o.z), now);
-  drawOwl(now);
-  drawFx(fx.filter(f => f.z <= 0));
-  drawFlies(flies.filter(f => f.z >= o.z && f.z <= 0), now);
-  drawFrame(now);
-  drawFlies(flies.filter(f => f.z > 0), now);      // przed szybą
-  drawFx(fx.filter(f => f.z > 0));
-
-  if(camStage !== 'błąd modelu') $('status').textContent = !tracking ? '' : camStage ? 'kamera działa, ' + camStage : (u.found ? `widzę cię · ${Math.round(u.dist)} cm` : 'nie widzę twarzy, sowa zasypia…');
-  CH.forEach((c, i) => $('ch' + i).classList.toggle('on', tracking && u.found && c[1]()));
+  draw(now);
+  if(camStage !== 'błąd modelu') $('status').textContent = !tracking ? '' : camStage ? 'kamera działa, ' + camStage : (found ? '' : 'nie widzę twarzy');
   requestAnimationFrame(frame);
 }
+eye.y = eyeT.y = hh*BY;
 requestAnimationFrame(frame);
 
+function hint(txt){ const h = $('hint'); h.textContent = txt; h.style.opacity = 1; setTimeout(() => h.style.opacity = 0, 5000); }
 $('gain').addEventListener('input', e => gain = +e.target.value);
 $('go').addEventListener('click', async () => {
-  beep(600, 900, .08, 'triangle', .04);
   const why = err => (err && (err.name && err.name !== 'Error' ? err.name + ' – ' : '') + (err.message || err));
   try{ await startCam(); }
   catch(err){ console.log(err); $('msg').textContent = 'Kamera: ' + (err && err.name === 'NotAllowedError' ? 'odmówiono dostępu. Zezwól na kamerę w ustawieniach przeglądarki dla tej strony i odśwież.' : why(err)); return; }
-  tracking = true; lastSeen = performance.now(); $('start').classList.add('hidden'); $('hint').textContent = HINTS[0];
+  tracking = true; lastSeen = performance.now(); $('start').classList.add('hidden'); $('dirBtn').style.display = 'block';
+  hint('Rusz głową, żeby wyjrzeć za krawędź okna');
   try{ await loadModel(); }
   catch(err){ console.log(err); camStage = 'błąd modelu'; $('status').textContent = 'Model twarzy się nie wczytał: ' + why(err); }
 });
 $('goNo').addEventListener('click', async () => {
   try{ if(window.DeviceOrientationEvent?.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch(e){}
-  $('start').classList.add('hidden'); $('chips').classList.add('hidden'); $('hint').textContent = 'Przeciągnij palcem. Stuknij, by wysłać serca';
+  $('start').classList.add('hidden'); $('dirBtn').style.display = 'block'; hint('Przeciągnij palcem albo przechyl telefon');
 });
 $('dirBtn').addEventListener('click', () => { dir = -dir; $('dirBtn').textContent = dir < 0 ? '⇄ kierunek' : '⇄ okno fizyczne'; });
 $('pv').addEventListener('click', () => { showPv = !showPv; $('pv').style.opacity = showPv ? 1 : .25; });

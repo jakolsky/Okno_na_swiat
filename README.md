@@ -1,16 +1,24 @@
-# Żywe okno
+# Okno na świat
 
-Telefon jako okno do pokoju na wieży. Przednia kamera śledzi oczy (MediaPipe Face Landmarker), a scena rysuje się z perspektywą sprzężoną z głową (head-coupled perspective), więc pokój ma prawdziwą głębię. Sowa patrzy ci w oczy i reaguje na mimikę.
+Telefon albo laptop jako szyba okna. Przednia kamera śledzi oczy (MediaPipe Face Landmarker), a krajobraz za oknem rysuje się z perspektywą sprzężoną z pozycją głowy (head-coupled perspective). Bliska trawa przesuwa się szybko, drzewa wolniej, góry i chmury prawie wcale, więc widok ma prawdziwą głębię.
 
-## Co umie
-- głębia z ruchu głowy: siatka ścian, okno na gwiazdy, świetliki i serca wylatujące przed ekran
-- sowa celuje źrenicami w twoje oczy w 3D
-- mrugnięcie, uśmiech, otwarte usta, uniesione brwi i przechył głowy wywołują reakcje sowy
-- zbliżysz się: sowa jest ciekawska; odejdziesz: zasypia
-- holograficzna rama zmienia kolor z kątem patrzenia
+Strona: https://jakolsky.github.io/okno_na_swiat/
 
-## Uruchomienie
-Kamera wymaga https. Włącz GitHub Pages (Settings → Pages → Deploy from branch → `main` / root) i otwórz adres strony na telefonie. Bez kamery działa sterowanie palcem lub żyroskopem.
+## Co jest w środku
+- `index.html`: cała scena i śledzenie oczu
+- `model/face_landmarker.task`: model twarzy MediaPipe (float16, v1), wbudowany w projekt
+- `mediapipe/`: biblioteka `@mediapipe/tasks-vision` 0.10.14 (JS i WASM), wbudowana w projekt
+
+Strona nie pobiera niczego z zewnętrznych CDN poza fontami, więc działa też tam, gdzie CDN są blokowane.
+
+## Sterowanie
+- przycisk „⇄ kierunek”: przełącza między odwróconą perspektywą a zachowaniem prawdziwej szyby
+- suwak „Siła głębi” na ekranie startowym
+- podgląd kamery w rogu pokazuje, czy twarz jest wykryta; stuknij, żeby go przyciemnić
+- bez kamery: przeciąganie palcem, myszą albo przechylanie telefonu
 
 ## Prywatność
 Obraz z kamery jest analizowany wyłącznie lokalnie w przeglądarce. Nic nie jest wysyłane ani zapisywane.
+
+## Licencje
+MediaPipe i model Face Landmarker: Apache License 2.0, © Google LLC (zob. `mediapipe/LICENSE`).
