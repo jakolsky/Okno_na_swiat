@@ -265,22 +265,33 @@ function burst(k, n){
 }
 
 // ---------- śledzenie twarzy (MediaPipe Face Landmarker, lokalnie) ----------
-async function initCamera(){
-  $('msg').textContent = 'Ładuję model twarzy (ok. 4 MB)…';
+let camStage = '';
+async function startCam(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
+    throw new Error('ta przeglądarka nie daje dostępu do kamery. Otwórz link w Safari lub Chrome, nie w aplikacji (Messenger, GitHub, Claude)');
+  $('msg').textContent = 'Proszę o dostęp do kamery…';
+  video = document.createElement('video');
+  video.setAttribute('playsinline', ''); video.setAttribute('autoplay', ''); video.muted = true; video.playsInline = true;
+  video.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none';
+  document.body.appendChild(video);                                    // iOS aktualizuje klatki tylko gdy wideo jest w DOM
+  video.srcObject = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:640}, height:{ideal:480}}, audio:false});
+  await video.play();
+  await new Promise(r => video.videoWidth ? r() : video.addEventListener('loadedmetadata', r, {once:true}));
+  const pvc = $('pv'); pvc.width = 200; pvc.height = Math.round(200*video.videoHeight/video.videoWidth) || 150; pvc.style.display = 'block';
+}
+async function loadModel(){
+  camStage = 'ładuję model…';
   const vision = await import(MP + '/vision_bundle.mjs');
   const files = await vision.FilesetResolver.forVisionTasks(MP + '/wasm');
   const opts = d => ({baseOptions:{modelAssetPath:MODEL, delegate:d}, runningMode:'VIDEO', numFaces:1, outputFaceBlendshapes:true});
   try{ lm = await vision.FaceLandmarker.createFromOptions(files, opts('GPU')); }
-  catch(e){ $('msg').textContent = 'GPU niedostępne, przełączam na CPU…'; lm = await vision.FaceLandmarker.createFromOptions(files, opts('CPU')); }
-  $('msg').textContent = 'Proszę o dostęp do kamery…';
-  video = document.createElement('video'); video.playsInline = true; video.muted = true;
-  video.srcObject = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:640}, height:{ideal:480}}, audio:false});
-  await video.play();
-  const pvc = $('pv'); pvc.width = 200; pvc.height = Math.round(200*video.videoHeight/video.videoWidth) || 150; pvc.style.display = 'block';
+  catch(e){ camStage = 'model na CPU…'; lm = await vision.FaceLandmarker.createFromOptions(files, opts('CPU')); }
+  camStage = '';
 }
 let lastVT = -1;
 function track(now){
-  if(!lm || !video || video.readyState < 2 || video.currentTime === lastVT) return;
+  if(!video || video.readyState < 2 || video.currentTime === lastVT) return;
+  if(!lm){ lastVT = video.currentTime; drawPv(null); return; }
   lastVT = video.currentTime;
   const r = lm.detectForVideo(video, now), f = r.faceLandmarks && r.faceLandmarks[0];
   u.found = !!f; drawPv(f); if(!f) return;
@@ -307,7 +318,7 @@ function track(now){
 function drawPv(f){
   const c = $('pv'), p = c.getContext('2d'), w = c.width, h = c.height;
   p.save(); p.scale(-1, 1); p.drawImage(video, -w, 0, w, h); p.restore();
-  c.className = f ? 'ok' : 'no';
+  c.className = f ? 'ok' : camStage ? '' : 'no';
   if(f){
     p.fillStyle = 'rgba(76,208,125,.8)';
     for(let i=0;i<468;i+=4){ p.fillRect((1 - f[i].x)*w - 1, f[i].y*h - 1, 2, 2); }
@@ -315,8 +326,8 @@ function drawPv(f){
     for(const k of [468, 473]){ p.beginPath(); p.arc((1 - f[k].x)*w, f[k].y*h, 4, 0, 7); p.fill(); }
   }
   p.fillStyle = 'rgba(0,0,0,.6)'; p.fillRect(0, h - 26, w, 26);
-  p.fillStyle = f ? '#4cd07d' : '#ff6b5e'; p.font = '600 16px Barlow,sans-serif'; p.textAlign = 'center';
-  p.fillText(f ? 'twarz OK · ' + Math.round(u.dist) + ' cm' : 'brak twarzy', w/2, h - 8);
+  p.fillStyle = f ? '#4cd07d' : camStage ? '#f6c632' : '#ff6b5e'; p.font = '600 16px Barlow,sans-serif'; p.textAlign = 'center';
+  p.fillText(f ? 'twarz OK · ' + Math.round(u.dist) + ' cm' : camStage || 'brak twarzy', w/2, h - 8);
 }
 
 // bez kamery: mysz, przeciąganie palcem lub żyroskop
@@ -357,7 +368,7 @@ function frame(now){
   drawFlies(flies.filter(f => f.z > 0), now);      // przed szybą
   drawFx(fx.filter(f => f.z > 0));
 
-  $('status').textContent = tracking ? (u.found ? `widzę cię · ${Math.round(u.dist)} cm` : 'nie widzę twarzy, sowa zasypia…') : '';
+  if(camStage !== 'błąd modelu') $('status').textContent = !tracking ? '' : camStage ? 'kamera działa, ' + camStage : (u.found ? `widzę cię · ${Math.round(u.dist)} cm` : 'nie widzę twarzy, sowa zasypia…');
   CH.forEach((c, i) => $('ch' + i).classList.toggle('on', tracking && u.found && c[1]()));
   requestAnimationFrame(frame);
 }
@@ -366,8 +377,12 @@ requestAnimationFrame(frame);
 $('gain').addEventListener('input', e => gain = +e.target.value);
 $('go').addEventListener('click', async () => {
   beep(600, 900, .08, 'triangle', .04);
-  try{ await initCamera(); tracking = true; $('start').classList.add('hidden'); $('hint').textContent = HINTS[0]; }
-  catch(err){ console.log(err); $('msg').textContent = 'Błąd: ' + (err && (err.name ? err.name + ' – ' : '') + (err.message || err)) + '. Zrób zrzut ekranu i wyślij go Claude. Możesz też grać bez kamery.'; }
+  const why = err => (err && (err.name && err.name !== 'Error' ? err.name + ' – ' : '') + (err.message || err));
+  try{ await startCam(); }
+  catch(err){ console.log(err); $('msg').textContent = 'Kamera: ' + (err && err.name === 'NotAllowedError' ? 'odmówiono dostępu. Zezwól na kamerę w ustawieniach przeglądarki dla tej strony i odśwież.' : why(err)); return; }
+  tracking = true; lastSeen = performance.now(); $('start').classList.add('hidden'); $('hint').textContent = HINTS[0];
+  try{ await loadModel(); }
+  catch(err){ console.log(err); camStage = 'błąd modelu'; $('status').textContent = 'Model twarzy się nie wczytał: ' + why(err); }
 });
 $('goNo').addEventListener('click', async () => {
   try{ if(window.DeviceOrientationEvent?.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch(e){}
