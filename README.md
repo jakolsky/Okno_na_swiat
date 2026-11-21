@@ -6,7 +6,9 @@ Strona: https://jakolsky.github.io/okno_na_swiat/
 
 ## Co jest w środku
 - `index.html`: scena i śledzenie oczu
-- `img/`: trzy warstwy zdjęć (góry, dolina, chata) z różną głębią
+- `img/`: panorama rozcięta na warstwy: niebo z górami, dolina z wioską, łąka (krojona na ok. 45 pasów o rosnącej głębi), stodoła, jabłoń i dwa domy po bokach okna
+- `zrodlo/panorama.png`: oryginalna panorama
+- `tools/build_layers.py`: skrypt, który tnie panoramę na warstwy (`python3 tools/build_layers.py`)
 - `model/face_landmarker.task`: model twarzy MediaPipe (float16, v1), wbudowany w projekt
 - `mediapipe/`: biblioteka `@mediapipe/tasks-vision` 0.10.14 (JS i WASM), wbudowana w projekt
 

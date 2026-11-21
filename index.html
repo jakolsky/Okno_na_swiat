@@ -50,7 +50,7 @@ input[type=range]{width:150px;accent-color:var(--gold)}
     <p>Trzymaj telefon nieruchomo i ruszaj głową, żeby wyjrzeć za krawędź.</p>
     <button class="btn" id="go">Otwórz okno</button>
     <button class="btn ghost" id="goNo">Bez kamery</button>
-    <div class="row">Siła głębi <input type="range" id="gain" min="0.5" max="2.5" step="0.1" value="1"></div>
+    <div class="row">Siła głębi <input type="range" id="gain" min="0.5" max="2.5" step="0.1" value="0.8"></div>
     <div id="msg"></div>
     <p class="small">Obraz z kamery jest analizowany tylko na tym urządzeniu. Nic nie jest wysyłane ani zapisywane.</p>
   </div>
@@ -65,17 +65,42 @@ const MODEL = new URL('./model/face_landmarker.task', location.href).href;   // 
 const EZ = 45, BY = .12;                         // BY: wysokość oczu (horyzontu) względem środka ekranu                                   // bazowa odległość oka od ekranu (cm)
 let W, H, cmpp, hw, hh, G;
 const eye = {x:0, y:0, z:EZ}, eyeT = {x:0, y:0, z:EZ};
-let gain = 1, dir = -1, lm = null, video = null, tracking = false, lastSeen = -1e9, showPv = true, last = 0, camStage = '', dist = EZ, found = false;
+let gain = .8, dir = -1, lm = null, video = null, tracking = false, lastSeen = -1e9, showPv = true, last = 0, camStage = '', dist = EZ, found = false;
 
-// warstwy zdjęć: im dalej (z bardziej ujemne), tym wolniej się przesuwają
-const LAYERS = [
-  {src:'img/far.jpg',   z:-4000, dy:-.2,  os:2.2},   // niebo i Dolomity, praktycznie w nieskończoności
-  {src:'img/mid.webp',  z:-160,  dy:.05,  os:1.8},      // dolina, wioska, las
-  {src:'img/near.webp', z:-22,   dy:0,    os:1.35},      // chata, balkon z pelargoniami, ławka z kotem
-];
+// ---------- scena: panorama rozcięta na warstwy głębi ----------
+// współrzędne w pikselach panoramy (PW x PH); z = odległość za szybą w cm (ujemna)
+const PW = 1340, PH = 795, OS = 1.15, HOR = 300;          // HOR: wiersz horyzontu łąki w panoramie
+const IMG = {};
+const SRC = {far:'img/p0_far.jpg', mid:'img/p1_mid.webp', ground:'img/p2_ground.webp', tree:'img/s_tree.webp', barn:'img/s_barn.webp', houseL:'img/s_houseL.webp', houseR:'img/s_houseR.webp'};
+const SPR = {"s_tree": [641, 0, 1391, 533], "s_barn": [673, 208, 1063, 451], "s_houseL": [-275, 0, 0, 795], "s_houseR": [1351, 0, 1702, 749]};                                          // prostokąty wycinków w panoramie
 let ready = 0, skyTop = '#2f6fc4';
-for(const L of LAYERS){ L.img = new Image(); L.img.onload = () => { ready++; if(L.z < -1000) skyTop = topColor(L.img); }; L.img.src = L.src; }
+for(const k in SRC){ const im = new Image(); im.onload = () => { ready++; if(k === 'far') skyTop = topColor(im); }; im.src = SRC[k]; IMG[k] = im; }
+const NIMG = Object.keys(SRC).length;
 function topColor(img){ try{ const c = document.createElement('canvas'); c.width = 8; c.height = 1; const x = c.getContext('2d'); x.drawImage(img, 0, 0, img.width, 4, 0, 0, 8, 1); const d = x.getImageData(4, 0, 1, 1).data; return `rgb(${d[0]},${d[1]},${d[2]})`; }catch(e){ return skyTop; } }
+// głębokość łąki: płaszczyzna ziemi, więc odległość rośnie jak 1/(y - horyzont)
+const zGround = py => -2500/Math.max(60, py - HOR);
+
+// lista elementów do narysowania, od najdalszego
+let ITEMS = [];
+function buildItems(){
+  ITEMS = [{img:'far', sx:0, sy:0, sw:PW, sh:PH, z:-320}, {img:'mid', sx:0, sy:0, sw:PW, sh:PH, z:-90}];
+  const step = 10;
+  ITEMS.push({img:'ground', sx:0, sy:0, sw:PW, sh:372, z:zGround(366)});
+  for(let y = 362; y < PH; y += step) ITEMS.push({img:'ground', sx:0, sy:y, sw:PW, sh:Math.min(step + 3, PH - y), z:zGround(y + step/2), strip:true});
+  const b = SPR.s_barn, tr = SPR.s_tree;
+  ITEMS.push({img:'barn', px:b[0], py:b[1], sw:b[2]-b[0], sh:b[3]-b[1], z:zGround(b[3] - 4)});
+  ITEMS.push({img:'tree', px:tr[0], py:tr[1], sw:tr[2]-tr[0], sh:tr[3]-tr[1], z:zGround(tr[3] - 6)});
+  ITEMS.sort((a, b) => a.z - b.z);
+  // domy po bokach okna: najbliżej, tuż za szybą
+  const L = SPR.s_houseL, R = SPR.s_houseR;
+  ITEMS.push({img:'houseL', px:L[0], py:L[1], sw:L[2]-L[0], sh:L[3]-L[1], z:-7, side:-1});
+  ITEMS.push({img:'houseR', px:R[0], py:R[1], sw:R[2]-R[0], sh:R[3]-R[1], z:-7, side:1});
+}
+buildItems();
+
+// pyłki unoszące się tuż za szybą
+const motes = Array.from({length:22}, () => ({x:Math.random()*2-1, y:Math.random()*2-1, z:-2 - Math.random()*22, ph:Math.random()*7, r:.04 + Math.random()*.06}));
+
 function resize(){
   const dpr = Math.min(devicePixelRatio || 1, 2);
   W = innerWidth; H = innerHeight; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -84,24 +109,27 @@ function resize(){
 }
 addEventListener('resize', resize); resize();
 
-// rzut przez szybę: punkt (x,y,z) za oknem (z<0) na płaszczyznę ekranu, widziany z pozycji oka
+// rzut przez szybę: punkt (x,y,z) za oknem na płaszczyznę ekranu, widziany z pozycji oka
 function P(x, y, z){ const t = eye.z/(eye.z - z); return [W/2 + (eye.x + (x - eye.x)*t)/cmpp, H/2 - (eye.y + (y - eye.y)*t)/cmpp, t/cmpp]; }
-
-// prostokąt warstwy na ekranie (px) dla bieżącej pozycji oka
-function layerRect(L){
-  const ar = L.img.naturalWidth/L.img.naturalHeight, ey0 = hh*BY;
-  // przy patrzeniu na wprost warstwa wypełnia ekran z zapasem ("cover")
-  let rh = 2*hh*L.os, rw = rh*ar; if(rw < 2*hw*L.os){ rw = 2*hw*L.os; rh = rw/ar; }
-  const sTop = rh/2 - L.dy*rh, sLeft = -rw/2, k = (EZ - L.z)/EZ;
-  // ten sam prostokąt przeniesiony na głębokość warstwy
-  return [P(sLeft*k, ey0 + (sTop - ey0)*k, L.z), P((sLeft + rw)*k, ey0 + (sTop - rh - ey0)*k, L.z)];
+// piksel panoramy -> punkt w świecie na głębokości z (tak, by przy patrzeniu na wprost wszystko się pokrywało)
+function scale(){ let s = 2*hh*OS/PH; if(PW*s < 2*hw*OS) s = 2*hw*OS/PW; return s; }
+function rectOf(it){
+  const s = scale(), cx = PW*.45, cy = PH*.5, ey0 = hh*BY, k = (EZ - it.z)/EZ;
+  let x0 = ((it.px ?? it.sx) - cx)*s, y0 = (cy - (it.py ?? it.sy))*s;
+  if(it.side){ x0 = it.side < 0 ? -hw*.74 - it.sw*s : hw*.74; }        // domy przyklejone do krawędzi okna
+  const x1 = x0 + it.sw*s, y1 = y0 - it.sh*s;
+  return [P(x0*k, ey0 + (y0 - ey0)*k, it.z), P(x1*k, ey0 + (y1 - ey0)*k, it.z)];
 }
-// czy żadna warstwa nie odsłania swojej krawędzi (boki i dół)
+// czy panorama zakrywa cały ekran (boki i dół), żeby nie było dziur
 function covers(){
-  for(const L of LAYERS){ if(!L.img.naturalWidth) continue; const [a, b] = layerRect(L); if(a[0] > 0 || b[0] < W || b[1] < H) return false; }
+  for(const it of ITEMS){
+    if(!(it.img === 'far' || it.img === 'mid' || (it.strip && it.sy + it.sh >= PH))) continue;
+    const [a, b] = rectOf(it);
+    if(a[0] > 0 || b[0] < W) return false;
+    if(it.strip && b[1] < H) return false;
+  }
   return true;
 }
-// jeśli wychylisz się za mocno, zatrzymaj widok na krawędzi zdjęcia zamiast pokazywać dziurę
 function clampEye(){
   const bx = 0, by = hh*BY, tx = eye.x, ty = eye.y;
   if(covers()) return;
@@ -112,22 +140,20 @@ function clampEye(){
 
 function draw(now){
   ctx.fillStyle = skyTop; ctx.fillRect(0, 0, W, H);
-  if(ready < LAYERS.length){ ctx.fillStyle = '#fff'; ctx.font = '600 16px Barlow,sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Ładuję widok…', W/2, H/2); }
-  const ey0 = hh*BY;
-  for(const L of LAYERS){
-    if(!L.img.complete || !L.img.naturalWidth) continue;
-    const [a, b] = layerRect(L);
-    ctx.drawImage(L.img, a[0], a[1], b[0] - a[0], b[1] - a[1]);
+  if(ready < NIMG){ ctx.fillStyle = '#fff'; ctx.font = '600 16px Barlow,sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Ładuję widok…', W/2, H/2); return; }
+  for(const it of ITEMS){
+    const im = IMG[it.img], [a, b] = rectOf(it);
+    const sx = it.px !== undefined ? 0 : it.sx, sy = it.px !== undefined ? 0 : it.sy;
+    ctx.drawImage(im, sx, sy, it.sw, it.sh, a[0], a[1], b[0] - a[0], b[1] - a[1]);
   }
-  // delikatna winieta i cień ościeżnicy dla poczucia szyby
+  // pyłki w złotym świetle
+  for(const m of motes){
+    const p = P(m.x*hw*1.2 + Math.sin(now/2100 + m.ph)*.6, m.y*hh + Math.sin(now/1700 + m.ph*2)*.4, m.z), r = m.r*p[2];
+    ctx.fillStyle = `rgba(255,244,210,${.35 + .3*Math.sin(now/800 + m.ph)})`; ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(.6, r), 0, 7); ctx.fill();
+  }
   const v = ctx.createRadialGradient(W/2, H/2, Math.min(W, H)*.45, W/2, H/2, Math.max(W, H)*.75);
-  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.28)');
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.25)');
   ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
-  const dz = -1.2, side = (pts, col) => { ctx.beginPath(); pts.forEach((q, i) => { const p = P(...q); i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); };
-  side([[-hw,-hh,0],[hw,-hh,0],[hw,-hh,dz],[-hw,-hh,dz]], '#2a1d12');
-  side([[-hw,hh,0],[hw,hh,0],[hw,hh,dz],[-hw,hh,dz]], '#3a2818');
-  side([[-hw,-hh,0],[-hw,hh,0],[-hw,hh,dz],[-hw,-hh,dz]], '#33231a');
-  side([[hw,-hh,0],[hw,hh,0],[hw,hh,dz],[hw,-hh,dz]], '#33231a');
 }
 
 // ---------- śledzenie oczu (MediaPipe Face Landmarker, lokalnie) ----------
@@ -194,7 +220,7 @@ function frame(now){
   if(tracking){ track(now); if(now - lastSeen > 900){ eyeT.x *= .97; eyeT.y += (hh*BY - eyeT.y)*.03; } }
   const a = 1 - Math.pow(.0004, dt);
   eye.x += (eyeT.x - eye.x)*a; eye.y += (eyeT.y - eye.y)*a; eye.z += (eyeT.z - eye.z)*a;
-  if(ready >= LAYERS.length) clampEye();
+  if(ready >= NIMG) clampEye();
   draw(now);
   if(camStage !== 'błąd modelu') $('status').textContent = !tracking ? '' : camStage ? 'kamera działa, ' + camStage : (found ? '' : 'nie widzę twarzy');
   requestAnimationFrame(frame);
