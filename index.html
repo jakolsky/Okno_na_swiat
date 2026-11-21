@@ -478,7 +478,7 @@ addEventListener('pointerup', () => { if(touch && tool === 'sponge') S.algae = M
 addEventListener('pointercancel', () => touch = null);
 
 // ================= karmienie dłonią (opcjonalnie, kamera) =================
-let video = null, handLm = null, lastVT = -1, lastHand = -1e9, handOn = false;
+let video = null, handLm = null, lastVT = -1, lastHand = -1e9, handOn = false, handStage = '';
 const hand = {x:0, y:0, pinch:false};
 $('tHand').onclick = async () => {
   if(handOn){ handOn = false; $('tHand').classList.remove('on'); $('pv').style.display = 'none'; video?.srcObject?.getTracks().forEach(t => t.stop()); video = null; return; }
@@ -487,19 +487,32 @@ $('tHand').onclick = async () => {
     video = document.createElement('video'); video.setAttribute('playsinline', ''); video.muted = true; video.playsInline = true;
     video.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none'; document.body.appendChild(video);
     video.srcObject = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:640}, height:{ideal:480}}, audio:false}); await video.play();
-    handOn = true; $('tHand').classList.add('on'); $('pv').style.display = 'block'; toast('Ładuję model dłoni…');
-    if(!handLm){ const vision = await import(MP + '/vision_bundle.mjs'); const files = await vision.FilesetResolver.forVisionTasks(MP + '/wasm');
-      try{ handLm = await vision.HandLandmarker.createFromOptions(files, {baseOptions:{modelAssetPath:HAND, delegate:'GPU'}, runningMode:'VIDEO', numHands:1}); }
-      catch(e){ handLm = await vision.HandLandmarker.createFromOptions(files, {baseOptions:{modelAssetPath:HAND, delegate:'CPU'}, runningMode:'VIDEO', numHands:1}); } }
+    handOn = true; $('tHand').classList.add('on'); $('pv').style.display = 'block';
+    if(!handLm){
+      handStage = 'pobieram model dłoni…';
+      // model pobieramy sami, żeby pokazać postęp i czytelny błąd
+      const res = await fetch(HAND); if(!res.ok) throw new Error(`nie udało się pobrać modelu dłoni (HTTP ${res.status})`);
+      const total = +res.headers.get('content-length') || 7819105, reader = res.body.getReader(), parts = []; let got = 0;
+      for(;;){ const {done, value} = await reader.read(); if(done) break; parts.push(value); got += value.length; handStage = `pobieram model dłoni… ${Math.min(99, Math.round(got/total*100))}%`; }
+      const buf = new Uint8Array(got); { let o = 0; for(const p of parts){ buf.set(p, o); o += p.length; } }
+      handStage = 'uruchamiam model dłoni…';
+      const vision = await import(MP + '/vision_bundle.mjs'); const files = await vision.FilesetResolver.forVisionTasks(MP + '/wasm');
+      const opts = d => ({baseOptions:{modelAssetBuffer:buf, delegate:d}, runningMode:'VIDEO', numHands:1});
+      try{ handLm = await vision.HandLandmarker.createFromOptions(files, opts('GPU')); }
+      catch(e){ handStage = 'model dłoni na CPU…'; handLm = await vision.HandLandmarker.createFromOptions(files, opts('CPU')); }
+      handStage = '';
+    }
     toast('Unieś dłoń, złącz kciuk z palcem wskazującym i pocieraj, a posypie się karma.', 'good');
-  }catch(err){ toast('Kamera: ' + (err.name === 'NotAllowedError' ? 'odmówiono dostępu.' : err.message), 'bad'); handOn = false; $('tHand').classList.remove('on'); }
+  }catch(err){ console.log(err); handStage = ''; toast((err.name === 'NotAllowedError' ? 'Kamera: odmówiono dostępu. Zezwól na kamerę dla tej strony.' : 'Dłoń: ' + (err.message || err)) + ' Wyślij ten komunikat Claude.', 'bad'); handOn = false; $('tHand').classList.remove('on'); $('pv').style.display = 'none'; }
 };
 function trackHand(now){
-  if(!handOn || !video || !handLm || video.readyState < 2 || video.currentTime === lastVT) return;
+  if(!handOn || !video || video.readyState < 2 || video.currentTime === lastVT) return;
   lastVT = video.currentTime;
-  const h = handLm.detectForVideo(video, now).landmarks?.[0];
   const c = $('pv'), p = c.getContext('2d'); p.save(); p.scale(-1, 1); p.drawImage(video, -200, 0, 200, 150); p.restore();
-  if(!h) return;
+  const label = txt => { p.fillStyle = 'rgba(0,0,0,.65)'; p.fillRect(0, 124, 200, 26); p.fillStyle = '#f6c632'; p.font = '600 14px Barlow,sans-serif'; p.textAlign = 'center'; p.fillText(txt, 100, 142); };
+  if(!handLm){ label(handStage || 'ładuję…'); return; }
+  const h = handLm.detectForVideo(video, now).landmarks?.[0];
+  if(!h){ label('pokaż dłoń'); return; }
   const size = Math.hypot(h[0].x - h[9].x, h[0].y - h[9].y) || .1, pd = Math.hypot(h[4].x - h[8].x, h[4].y - h[8].y)/size;
   hand.pinch = hand.pinch ? pd < .55 : pd < .35;
   const tx = W/2 + ((1 - (h[4].x + h[8].x)/2) - .5)*W*1.5, ty = H/2 + ((h[4].y + h[8].y)/2 - .5)*H*1.5;
