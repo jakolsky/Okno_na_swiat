@@ -326,11 +326,11 @@ function buildFlakes(){
   for(let i=0;i<MAXF;i++){ F.push({alive:false, p:new THREE.Vector3(), v:new THREE.Vector3(), rot:new THREE.Euler(), age:0, rest:0, s:1}); flakes.setColorAt(i, c.set(cols[i % cols.length])); }
 }
 let fIdx = 0;
-function spawnFlake(x, z){
+function spawnFlake(x, z, y = surfY - u*.01){
   const k = F[fIdx]; fIdx = (fIdx + 1) % MAXF;
   k.alive = true; k.age = 0; k.rest = 0; k.s = u*(.035 + Math.random()*.03);
-  k.p.set(THREE.MathUtils.clamp(x + (Math.random() - .5)*u*.3, -hw*.95, hw*.95), surfY - u*.01, THREE.MathUtils.clamp(z + (Math.random() - .5)*u*.3, -D*.95, -u*.15));
-  k.v.set((Math.random() - .5)*u*.2, 0, (Math.random() - .5)*u*.2); k.float = .4 + Math.random()*1.2; k.ph = Math.random()*6;
+  k.p.set(THREE.MathUtils.clamp(x + (Math.random() - .5)*u*.12, -hw*.95, hw*.95), Math.min(y + (Math.random() - .5)*u*.08, surfY - u*.01), THREE.MathUtils.clamp(z + (Math.random() - .5)*u*.12, -D*.95, -u*.15));
+  k.v.set((Math.random() - .5)*u*.2, 0, (Math.random() - .5)*u*.2); k.float = k.p.y > surfY - u*.05 ? .4 + Math.random()*1.2 : 0; k.ph = Math.random()*6;
   k.rot.set(Math.random()*6, Math.random()*6, 0);
 }
 function updateFlakes(dt, t){
@@ -355,7 +355,8 @@ function screenToTank(px, py, z){
 let sprinkleAcc = 0;
 function sprinkle(px, py, dt, rate = 14){
   sprinkleAcc += dt*rate;
-  while(sprinkleAcc >= 1){ sprinkleAcc--; const z = -D*(.12 + Math.random()*.35), p = screenToTank(px, py, z); spawnFlake(p.x, z); }
+  // karma pojawia się dokładnie pod palcami (tuż za szybą) i opada w dół
+  while(sprinkleAcc >= 1){ sprinkleAcc--; const z = -u*(.3 + Math.random()*.4), p = screenToTank(px, py, z); spawnFlake(p.x, z, p.y); }
 }
 
 let actx = null, lastPlop = 0;
