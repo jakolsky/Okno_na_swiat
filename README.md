@@ -1,5 +1,9 @@
 # Okno na świat
 
+**Akwarium za szybą** (`index.html`): ekran jako przednia szyba akwarium w prawdziwym 3D (Three.js). Kamera śledzi oczy, więc perspektywa zmienia się jak przez szybę. Dłoń przed ekranem (MediaPipe Hand Landmarker): złącz kciuk z palcem wskazującym i pocieraj, a z góry sypie się karma, do której podpływają ryby. Bez kamery: dotknij ekranu. Światło: kaustyki, promienie i mgła wodna podpatrzone w [Abyssal Garden](https://github.com/Noniv/abyssal-garden) (MIT).
+
+**Okno na Alpy** (`okno.html`): poprzednia wersja z panoramą tyrolską.
+
 Telefon albo laptop jako szyba okna. Przednia kamera śledzi oczy (MediaPipe Face Landmarker), a krajobraz za oknem rysuje się z perspektywą sprzężoną z pozycją głowy (head-coupled perspective). Bliska trawa przesuwa się szybko, drzewa wolniej, góry i chmury prawie wcale, więc widok ma prawdziwą głębię.
 
 Strona: https://jakolsky.github.io/okno_na_swiat/
@@ -24,4 +28,5 @@ Strona nie pobiera niczego z zewnętrznych CDN poza fontami, więc działa też 
 Obraz z kamery jest analizowany wyłącznie lokalnie w przeglądarce. Nic nie jest wysyłane ani zapisywane.
 
 ## Licencje
+Three.js r160: MIT (zob. `vendor/THREE_LICENSE`). Model dłoni `model/hand_landmarker.task`: Apache 2.0, © Google LLC.
 MediaPipe i model Face Landmarker: Apache License 2.0, © Google LLC (zob. `mediapipe/LICENSE`).

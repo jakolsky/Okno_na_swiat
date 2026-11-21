@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Okno na świat</title>
+<style>
+/*
+VOICE: spokojny widok, złota godzina
+IDEA: ekran telefonu jako szyba okna, za którą rozciąga się krajobraz
+PICTURE: trawa tuż za szybą, drzewa, jezioro, wzgórza, góry we mgle, chmury i słońce
+COLOUR and TYPE: ciepłe niebo, zielenie gasnące w błękit z odległością; Fraunces + Barlow
+LAYOUT: pełny ekran, podpowiedź u góry, podgląd kamery w rogu
+*/
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Barlow:wght@400;600&display=swap');
+:root{--ink:#fbf4e6;--gold:#f6c632}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:#000;color:var(--ink);overflow:hidden;font:16px/1.45 Barlow,system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+.top{position:fixed;left:0;right:0;top:0;padding:max(14px,env(safe-area-inset-top)) 16px 0;text-align:center;pointer-events:none}
+#hint{font:600 18px/1.2 Fraunces,serif;text-shadow:0 1px 8px #0008;transition:opacity 1s}
+#status{font-size:13px;margin-top:4px;text-shadow:0 1px 6px #000a}
+#dirBtn{position:fixed;left:12px;bottom:max(12px,env(safe-area-inset-bottom));min-height:40px;padding:0 14px;border-radius:20px;border:1px solid #ffffff50;background:#00000060;color:var(--ink);font:600 14px Barlow,sans-serif;display:none}
+#pv{position:fixed;right:12px;bottom:max(12px,env(safe-area-inset-bottom));width:112px;height:auto;border-radius:12px;border:3px solid #777;display:none;background:#000;transition:border-color .2s,opacity .2s}
+#pv.ok{border-color:#4cd07d}#pv.no{border-color:#e0352b}
+.screen{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:#141210e6}
+.card{max-width:400px;text-align:center}
+h1{font:600 44px/1.05 Fraunces,serif;margin-bottom:12px}
+.card p{opacity:.88;margin-bottom:12px}
+.btn{min-height:52px;padding:0 26px;border:0;border-radius:26px;background:var(--gold);color:#141210;font:600 18px Barlow,sans-serif;cursor:pointer;margin:4px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid #ffffff55;font-size:16px}
+.btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.row{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:14px;font-size:14px;opacity:.85}
+input[type=range]{width:150px;accent-color:var(--gold)}
+#msg{color:var(--gold);font-size:14px;min-height:20px;margin-top:10px}
+.small{font-size:13px;opacity:.6;margin-top:12px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="top"><div id="hint">&nbsp;</div><div id="status"></div></div>
+<canvas id="pv" width="200" height="150"></canvas>
+<button id="dirBtn" aria-label="Odwróć kierunek perspektywy">⇄ kierunek</button>
+
+<div class="screen" id="start">
+  <div class="card">
+    <h1>Okno na świat</h1>
+    <p>Telefon staje się szybą okna. Przednia kamera śledzi twoje oczy, a krajobraz za oknem przesuwa się warstwami tak, jak w prawdziwym oknie: bliska trawa szybko, góry ledwo.</p>
+    <p>Trzymaj telefon nieruchomo i ruszaj głową, żeby wyjrzeć za krawędź.</p>
+    <button class="btn" id="go">Otwórz okno</button>
+    <button class="btn ghost" id="goNo">Bez kamery</button>
+    <div class="row">Siła głębi <input type="range" id="gain" min="0.5" max="2.5" step="0.1" value="0.8"></div>
+    <div id="msg"></div>
+    <p class="small">Obraz z kamery jest analizowany tylko na tym urządzeniu. Nic nie jest wysyłane ani zapisywane.</p>
+  </div>
+</div>
+
+<script type="module">
+{
+const $ = id => document.getElementById(id);
+const cv = $('c'), ctx = cv.getContext('2d');
+const MP = new URL('./mediapipe', location.href).href;          // biblioteka wbudowana w projekt
+const MODEL = new URL('./model/face_landmarker.task', location.href).href;   // model wbudowany w projekt
+const EZ = 45, BY = .12;                         // BY: wysokość oczu (horyzontu) względem środka ekranu                                   // bazowa odległość oka od ekranu (cm)
+let W, H, cmpp, hw, hh, G;
+const eye = {x:0, y:0, z:EZ}, eyeT = {x:0, y:0, z:EZ};
+let gain = .8, dir = -1, lm = null, video = null, tracking = false, lastSeen = -1e9, showPv = true, last = 0, camStage = '', dist = EZ, found = false;
+
+// ---------- scena: panorama rozcięta na warstwy głębi ----------
+// współrzędne w pikselach panoramy (PW x PH); z = odległość za szybą w cm (ujemna)
+const PW = 1340, PH = 795, OS = 1.15, HOR = 300;          // HOR: wiersz horyzontu łąki w panoramie
+const IMG = {};
+const SRC = {far:'img/p0_far.jpg', mid:'img/p1_mid.webp', ground:'img/p2_ground.webp', tree:'img/s_tree.webp', barn:'img/s_barn.webp', houseL:'img/s_houseL.webp', houseR:'img/s_houseR.webp'};
+const SPR = {"s_tree": [641, 0, 1391, 533], "s_barn": [673, 208, 1063, 451], "s_houseL": [-275, 0, 0, 795], "s_houseR": [1351, 0, 1702, 749]};                                          // prostokąty wycinków w panoramie
+let ready = 0, skyTop = '#2f6fc4';
+for(const k in SRC){ const im = new Image(); im.onload = () => { ready++; if(k === 'far') skyTop = topColor(im); }; im.src = SRC[k]; IMG[k] = im; }
+const NIMG = Object.keys(SRC).length;
+function topColor(img){ try{ const c = document.createElement('canvas'); c.width = 8; c.height = 1; const x = c.getContext('2d'); x.drawImage(img, 0, 0, img.width, 4, 0, 0, 8, 1); const d = x.getImageData(4, 0, 1, 1).data; return `rgb(${d[0]},${d[1]},${d[2]})`; }catch(e){ return skyTop; } }
+// głębokość łąki: płaszczyzna ziemi, więc odległość rośnie jak 1/(y - horyzont)
+const zGround = py => -2500/Math.max(60, py - HOR);
+
+// lista elementów do narysowania, od najdalszego
+let ITEMS = [];
+function buildItems(){
+  ITEMS = [{img:'far', sx:0, sy:0, sw:PW, sh:PH, z:-320}, {img:'mid', sx:0, sy:0, sw:PW, sh:PH, z:-90}];
+  const step = 10;
+  ITEMS.push({img:'ground', sx:0, sy:0, sw:PW, sh:372, z:zGround(366)});
+  for(let y = 362; y < PH; y += step) ITEMS.push({img:'ground', sx:0, sy:y, sw:PW, sh:Math.min(step + 3, PH - y), z:zGround(y + step/2), strip:true});
+  const b = SPR.s_barn, tr = SPR.s_tree;
+  ITEMS.push({img:'barn', px:b[0], py:b[1], sw:b[2]-b[0], sh:b[3]-b[1], z:zGround(b[3] - 4)});
+  ITEMS.push({img:'tree', px:tr[0], py:tr[1], sw:tr[2]-tr[0], sh:tr[3]-tr[1], z:zGround(tr[3] - 6)});
+  ITEMS.sort((a, b) => a.z - b.z);
+  // domy po bokach okna: najbliżej, tuż za szybą
+  const L = SPR.s_houseL, R = SPR.s_houseR;
+  ITEMS.push({img:'houseL', px:L[0], py:L[1], sw:L[2]-L[0], sh:L[3]-L[1], z:-7, side:-1});
+  ITEMS.push({img:'houseR', px:R[0], py:R[1], sw:R[2]-R[0], sh:R[3]-R[1], z:-7, side:1});
+}
+buildItems();
+
+// pyłki unoszące się tuż za szybą
+const motes = Array.from({length:22}, () => ({x:Math.random()*2-1, y:Math.random()*2-1, z:-2 - Math.random()*22, ph:Math.random()*7, r:.04 + Math.random()*.06}));
+
+function resize(){
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cmpp = matchMedia('(pointer:coarse)').matches ? 2.54/160 : 2.54/96;
+  hw = W*cmpp/2; hh = H*cmpp/2;
+}
+addEventListener('resize', resize); resize();
+
+// rzut przez szybę: punkt (x,y,z) za oknem na płaszczyznę ekranu, widziany z pozycji oka
+function P(x, y, z){ const t = eye.z/(eye.z - z); return [W/2 + (eye.x + (x - eye.x)*t)/cmpp, H/2 - (eye.y + (y - eye.y)*t)/cmpp, t/cmpp]; }
+// piksel panoramy -> punkt w świecie na głębokości z (tak, by przy patrzeniu na wprost wszystko się pokrywało)
+function scale(){ let s = 2*hh*OS/PH; if(PW*s < 2*hw*OS) s = 2*hw*OS/PW; return s; }
+function rectOf(it){
+  const s = scale(), cx = PW*.45, cy = PH*.5, ey0 = hh*BY, k = (EZ - it.z)/EZ;
+  let x0 = ((it.px ?? it.sx) - cx)*s, y0 = (cy - (it.py ?? it.sy))*s;
+  if(it.side){ x0 = it.side < 0 ? -hw*.74 - it.sw*s : hw*.74; }        // domy przyklejone do krawędzi okna
+  const x1 = x0 + it.sw*s, y1 = y0 - it.sh*s;
+  return [P(x0*k, ey0 + (y0 - ey0)*k, it.z), P(x1*k, ey0 + (y1 - ey0)*k, it.z)];
+}
+// czy panorama zakrywa cały ekran (boki i dół), żeby nie było dziur
+function covers(){
+  for(const it of ITEMS){
+    if(!(it.img === 'far' || it.img === 'mid' || (it.strip && it.sy + it.sh >= PH))) continue;
+    const [a, b] = rectOf(it);
+    if(a[0] > 0 || b[0] < W) return false;
+    if(it.strip && b[1] < H) return false;
+  }
+  return true;
+}
+function clampEye(){
+  const bx = 0, by = hh*BY, tx = eye.x, ty = eye.y;
+  if(covers()) return;
+  let lo = 0, hi = 1;
+  for(let i=0;i<12;i++){ const m = (lo + hi)/2; eye.x = bx + (tx - bx)*m; eye.y = by + (ty - by)*m; covers() ? lo = m : hi = m; }
+  eye.x = bx + (tx - bx)*lo; eye.y = by + (ty - by)*lo;
+}
+
+function draw(now){
+  ctx.fillStyle = skyTop; ctx.fillRect(0, 0, W, H);
+  if(ready < NIMG){ ctx.fillStyle = '#fff'; ctx.font = '600 16px Barlow,sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Ładuję widok…', W/2, H/2); return; }
+  for(const it of ITEMS){
+    const im = IMG[it.img], [a, b] = rectOf(it);
+    const sx = it.px !== undefined ? 0 : it.sx, sy = it.px !== undefined ? 0 : it.sy;
+    ctx.drawImage(im, sx, sy, it.sw, it.sh, a[0], a[1], b[0] - a[0], b[1] - a[1]);
+  }
+  // pyłki w złotym świetle
+  for(const m of motes){
+    const p = P(m.x*hw*1.2 + Math.sin(now/2100 + m.ph)*.6, m.y*hh + Math.sin(now/1700 + m.ph*2)*.4, m.z), r = m.r*p[2];
+    ctx.fillStyle = `rgba(255,244,210,${.35 + .3*Math.sin(now/800 + m.ph)})`; ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(.6, r), 0, 7); ctx.fill();
+  }
+  const v = ctx.createRadialGradient(W/2, H/2, Math.min(W, H)*.45, W/2, H/2, Math.max(W, H)*.75);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.25)');
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+}
+
+// ---------- śledzenie oczu (MediaPipe Face Landmarker, lokalnie) ----------
+async function startCam(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
+    throw new Error('ta przeglądarka nie daje dostępu do kamery. Otwórz link w Safari lub Chrome, nie w aplikacji (Messenger, GitHub, Claude)');
+  $('msg').textContent = 'Proszę o dostęp do kamery…';
+  video = document.createElement('video');
+  video.setAttribute('playsinline', ''); video.setAttribute('autoplay', ''); video.muted = true; video.playsInline = true;
+  video.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none';
+  document.body.appendChild(video);                       // iOS odświeża klatki tylko gdy wideo jest w DOM
+  video.srcObject = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:640}, height:{ideal:480}}, audio:false});
+  await video.play();
+  await new Promise(r => video.videoWidth ? r() : video.addEventListener('loadedmetadata', r, {once:true}));
+  const pvc = $('pv'); pvc.width = 200; pvc.height = Math.round(200*video.videoHeight/video.videoWidth) || 150; pvc.style.display = 'block';
+}
+async function loadModel(){
+  camStage = 'ładuję model…';
+  const vision = await import(MP + '/vision_bundle.mjs');
+  const files = await vision.FilesetResolver.forVisionTasks(MP + '/wasm');
+  const opts = d => ({baseOptions:{modelAssetPath:MODEL, delegate:d}, runningMode:'VIDEO', numFaces:1});
+  try{ lm = await vision.FaceLandmarker.createFromOptions(files, opts('GPU')); }
+  catch(e){ camStage = 'model na CPU…'; lm = await vision.FaceLandmarker.createFromOptions(files, opts('CPU')); }
+  camStage = '';
+}
+let lastVT = -1;
+function track(now){
+  if(!video || video.readyState < 2 || video.currentTime === lastVT) return;
+  lastVT = video.currentTime;
+  if(!lm){ drawPv(null); return; }
+  const r = lm.detectForVideo(video, now), fc = r.faceLandmarks && r.faceLandmarks[0];
+  found = !!fc; drawPv(fc); if(!fc) return;
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const FL = 2*Math.tan(32.5*Math.PI/180), fovW = vw >= vh ? FL : FL*vw/vh, fovH = vw >= vh ? FL*vh/vw : FL;
+  const A = {x:1 - fc[468].x, y:fc[468].y}, B = {x:1 - fc[473].x, y:fc[473].y};   // tęczówki, w lustrze
+  const ipd = Math.hypot((B.x - A.x)*vw, (B.y - A.y)*vh)/vw;
+  dist = Math.min(90, Math.max(15, 6.3/(ipd*fovW)));
+  const hx = ((A.x + B.x)/2 - .5)*fovW*dist, hy = -((A.y + B.y)/2 - .5)*fovH*dist;
+  eyeT.x = dir*hx*gain;                                   // dir=-1: głowa w prawo, widok w lewo
+  eyeT.y = dir*hy*gain + hh*BY;
+  eyeT.z = dist;
+  lastSeen = now;
+}
+function drawPv(fc){
+  if(!showPv) return;
+  const c = $('pv'), p = c.getContext('2d'), w = c.width, h = c.height;
+  p.save(); p.scale(-1, 1); p.drawImage(video, -w, 0, w, h); p.restore();
+  c.className = fc ? 'ok' : camStage ? '' : 'no';
+  if(fc){
+    p.fillStyle = 'rgba(76,208,125,.8)'; for(let i=0;i<468;i+=4) p.fillRect((1 - fc[i].x)*w - 1, fc[i].y*h - 1, 2, 2);
+    p.fillStyle = '#f6c632'; for(const k of [468, 473]){ p.beginPath(); p.arc((1 - fc[k].x)*w, fc[k].y*h, 4, 0, 7); p.fill(); }
+  }
+  p.fillStyle = 'rgba(0,0,0,.6)'; p.fillRect(0, h - 26, w, 26);
+  p.fillStyle = fc ? '#4cd07d' : camStage ? '#f6c632' : '#ff6b5e'; p.font = '600 16px Barlow,sans-serif'; p.textAlign = 'center';
+  p.fillText(fc ? 'twarz OK · ' + Math.round(dist) + ' cm' : camStage || 'brak twarzy', w/2, h - 8);
+}
+
+// bez kamery: mysz, przeciąganie palcem lub żyroskop
+addEventListener('pointermove', e => { if(tracking || (e.pointerType !== 'mouse' && !e.buttons)) return; eyeT.x = dir*(e.clientX/W - .5)*2*hw*gain*2; eyeT.y = dir*(e.clientY/H - .5)*-2*hh*gain + hh*BY; eyeT.z = EZ; });
+addEventListener('deviceorientation', e => { if(tracking || e.gamma == null) return; eyeT.x = Math.max(-30, Math.min(30, e.gamma))/30*hw*2*gain; eyeT.y = -Math.max(-30, Math.min(30, e.beta - 45))/30*hh*gain + hh*BY; eyeT.z = EZ; });
+
+function frame(now){
+  const dt = Math.min(.05, (now - (last || now))/1000); last = now;
+  if(tracking){ track(now); if(now - lastSeen > 900){ eyeT.x *= .97; eyeT.y += (hh*BY - eyeT.y)*.03; } }
+  const a = 1 - Math.pow(.0004, dt);
+  eye.x += (eyeT.x - eye.x)*a; eye.y += (eyeT.y - eye.y)*a; eye.z += (eyeT.z - eye.z)*a;
+  if(ready >= NIMG) clampEye();
+  draw(now);
+  if(camStage !== 'błąd modelu') $('status').textContent = !tracking ? '' : camStage ? 'kamera działa, ' + camStage : (found ? '' : 'nie widzę twarzy');
+  requestAnimationFrame(frame);
+}
+eye.y = eyeT.y = hh*BY;
+requestAnimationFrame(frame);
+
+function hint(txt){ const h = $('hint'); h.textContent = txt; h.style.opacity = 1; setTimeout(() => h.style.opacity = 0, 5000); }
+$('gain').addEventListener('input', e => gain = +e.target.value);
+$('go').addEventListener('click', async () => {
+  const why = err => (err && (err.name && err.name !== 'Error' ? err.name + ' – ' : '') + (err.message || err));
+  try{ await startCam(); }
+  catch(err){ console.log(err); $('msg').textContent = 'Kamera: ' + (err && err.name === 'NotAllowedError' ? 'odmówiono dostępu. Zezwól na kamerę w ustawieniach przeglądarki dla tej strony i odśwież.' : why(err)); return; }
+  tracking = true; lastSeen = performance.now(); $('start').classList.add('hidden'); $('dirBtn').style.display = 'block';
+  hint('Rusz głową, żeby wyjrzeć za krawędź okna');
+  try{ await loadModel(); }
+  catch(err){ console.log(err); camStage = 'błąd modelu'; $('status').textContent = 'Model twarzy się nie wczytał: ' + why(err); }
+});
+$('goNo').addEventListener('click', async () => {
+  try{ if(window.DeviceOrientationEvent?.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch(e){}
+  $('start').classList.add('hidden'); $('dirBtn').style.display = 'block'; hint('Przeciągnij palcem albo przechyl telefon');
+});
+$('dirBtn').addEventListener('click', () => { dir = -dir; $('dirBtn').textContent = dir < 0 ? '⇄ kierunek' : '⇄ okno fizyczne'; });
+$('pv').addEventListener('click', () => { showPv = !showPv; $('pv').style.opacity = showPv ? 1 : .25; });
+}
+</script>
+</body>
+</html>

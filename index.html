@@ -3,248 +3,507 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Okno na świat</title>
+<title>Akwarium za szybą</title>
 <style>
 /*
-VOICE: spokojny widok, złota godzina
-IDEA: ekran telefonu jako szyba okna, za którą rozciąga się krajobraz
-PICTURE: trawa tuż za szybą, drzewa, jezioro, wzgórza, góry we mgle, chmury i słońce
-COLOUR and TYPE: ciepłe niebo, zielenie gasnące w błękit z odległością; Fraunces + Barlow
+VOICE: cisza pod wodą, spokojne światło, odrobina zabawy przy karmieniu
+IDEA: ekran jako przednia szyba akwarium; głowa zmienia perspektywę, dłoń sypie karmę
+PICTURE: piasek, kamienie, falujące rośliny, ławica neonków, promienie światła i kaustyki
+COLOUR and TYPE: morska zieleń i turkus, ciepła karma; Fraunces + Barlow
 LAYOUT: pełny ekran, podpowiedź u góry, podgląd kamery w rogu
 */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Barlow:wght@400;600&display=swap');
-:root{--ink:#fbf4e6;--gold:#f6c632}
+:root{--ink:#eaf8f6;--gold:#f6c632}
 *{box-sizing:border-box;margin:0}
-html,body{height:100%;background:#000;color:var(--ink);overflow:hidden;font:16px/1.45 Barlow,system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
-#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+html,body{height:100%;background:#031a1f;color:var(--ink);overflow:hidden;font:16px/1.45 Barlow,system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+#sheen{position:fixed;inset:-20%;pointer-events:none;background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.06) 48%,transparent 54%);will-change:transform}
 .top{position:fixed;left:0;right:0;top:0;padding:max(14px,env(safe-area-inset-top)) 16px 0;text-align:center;pointer-events:none}
-#hint{font:600 18px/1.2 Fraunces,serif;text-shadow:0 1px 8px #0008;transition:opacity 1s}
-#status{font-size:13px;margin-top:4px;text-shadow:0 1px 6px #000a}
+#hint{font:600 18px/1.25 Fraunces,serif;text-shadow:0 1px 10px #000c;transition:opacity 1s;max-width:520px;margin:0 auto}
+#status{font-size:13px;margin-top:4px;text-shadow:0 1px 6px #000c}
+.chips{position:fixed;left:12px;bottom:max(64px,calc(env(safe-area-inset-bottom) + 58px));display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.chip{font:600 13px Barlow,sans-serif;padding:4px 10px;border-radius:14px;background:#00000070;border:1px solid #ffffff25;opacity:.55;transition:all .2s;width:max-content}
+.chip.on{opacity:1;background:var(--gold);color:#102226;border-color:var(--gold)}
 #dirBtn{position:fixed;left:12px;bottom:max(12px,env(safe-area-inset-bottom));min-height:40px;padding:0 14px;border-radius:20px;border:1px solid #ffffff50;background:#00000060;color:var(--ink);font:600 14px Barlow,sans-serif;display:none}
-#pv{position:fixed;right:12px;bottom:max(12px,env(safe-area-inset-bottom));width:112px;height:auto;border-radius:12px;border:3px solid #777;display:none;background:#000;transition:border-color .2s,opacity .2s}
+#pv{position:fixed;right:12px;bottom:max(12px,env(safe-area-inset-bottom));width:120px;height:auto;border-radius:12px;border:3px solid #777;display:none;background:#000;transition:border-color .2s,opacity .2s}
 #pv.ok{border-color:#4cd07d}#pv.no{border-color:#e0352b}
-.screen{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:#141210e6}
-.card{max-width:400px;text-align:center}
+#cursor{position:fixed;left:0;top:0;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:2px solid #ffe7a8;box-shadow:0 0 14px #ffd46a;pointer-events:none;opacity:0;transition:width .12s,height .12s,margin .12s,opacity .3s}
+#cursor.pinch{width:22px;height:22px;margin:-11px 0 0 -11px;background:#ffd46a55}
+.screen{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:#031a1fe6;overflow:auto}
+.card{max-width:420px;text-align:center}
 h1{font:600 44px/1.05 Fraunces,serif;margin-bottom:12px}
-.card p{opacity:.88;margin-bottom:12px}
-.btn{min-height:52px;padding:0 26px;border:0;border-radius:26px;background:var(--gold);color:#141210;font:600 18px Barlow,sans-serif;cursor:pointer;margin:4px}
+.card p{opacity:.9;margin-bottom:12px}
+.card ul{text-align:left;margin:0 auto 18px;padding-left:20px;opacity:.88;font-size:15px}
+.btn{min-height:52px;padding:0 26px;border:0;border-radius:26px;background:var(--gold);color:#102226;font:600 18px Barlow,sans-serif;cursor:pointer;margin:4px}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid #ffffff55;font-size:16px}
 .btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .row{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:14px;font-size:14px;opacity:.85}
 input[type=range]{width:150px;accent-color:var(--gold)}
 #msg{color:var(--gold);font-size:14px;min-height:20px;margin-top:10px}
 .small{font-size:13px;opacity:.6;margin-top:12px}
+.small a{color:inherit}
 .hidden{display:none!important}
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
+<canvas id="gl"></canvas>
+<div id="sheen"></div>
+<div id="cursor"></div>
 <div class="top"><div id="hint">&nbsp;</div><div id="status"></div></div>
+<div class="chips hidden" id="chips"><span class="chip" id="chFace">twarz</span><span class="chip" id="chHand">dłoń</span><span class="chip" id="chPinch">szczypta</span></div>
 <canvas id="pv" width="200" height="150"></canvas>
 <button id="dirBtn" aria-label="Odwróć kierunek perspektywy">⇄ kierunek</button>
 
 <div class="screen" id="start">
   <div class="card">
-    <h1>Okno na świat</h1>
-    <p>Telefon staje się szybą okna. Przednia kamera śledzi twoje oczy, a krajobraz za oknem przesuwa się warstwami tak, jak w prawdziwym oknie: bliska trawa szybko, góry ledwo.</p>
-    <p>Trzymaj telefon nieruchomo i ruszaj głową, żeby wyjrzeć za krawędź.</p>
-    <button class="btn" id="go">Otwórz okno</button>
+    <h1>Akwarium za szybą</h1>
+    <p>Ekran staje się przednią szybą akwarium. Kamera śledzi twoje oczy, więc możesz zajrzeć w głąb i w rogi zbiornika, a ryby pływają w prawdziwym 3D.</p>
+    <ul>
+      <li>Ruszaj głową, żeby zajrzeć za kamienie i rośliny.</li>
+      <li>Unieś dłoń przed ekranem, złącz kciuk z palcem wskazującym i pocieraj palcami, a z góry posypie się karma.</li>
+      <li>Bez kamery: dotknij ekranu, żeby sypnąć karmę.</li>
+    </ul>
+    <button class="btn" id="go">Otwórz akwarium</button>
     <button class="btn ghost" id="goNo">Bez kamery</button>
-    <div class="row">Siła głębi <input type="range" id="gain" min="0.5" max="2.5" step="0.1" value="0.8"></div>
+    <div class="row">Siła głębi <input type="range" id="gain" min="0.5" max="2.5" step="0.1" value="1.2"></div>
     <div id="msg"></div>
-    <p class="small">Obraz z kamery jest analizowany tylko na tym urządzeniu. Nic nie jest wysyłane ani zapisywane.</p>
+    <p class="small">Obraz z kamery jest analizowany tylko na tym urządzeniu. Nic nie jest wysyłane ani zapisywane. Poprzednia wersja: <a href="okno.html">okno na Alpy</a>.</p>
   </div>
 </div>
 
 <script type="module">
+import * as THREE from './vendor/three.module.min.js';
 {
 const $ = id => document.getElementById(id);
-const cv = $('c'), ctx = cv.getContext('2d');
-const MP = new URL('./mediapipe', location.href).href;          // biblioteka wbudowana w projekt
-const MODEL = new URL('./model/face_landmarker.task', location.href).href;   // model wbudowany w projekt
-const EZ = 45, BY = .12;                         // BY: wysokość oczu (horyzontu) względem środka ekranu                                   // bazowa odległość oka od ekranu (cm)
-let W, H, cmpp, hw, hh, G;
-const eye = {x:0, y:0, z:EZ}, eyeT = {x:0, y:0, z:EZ};
-let gain = .8, dir = -1, lm = null, video = null, tracking = false, lastSeen = -1e9, showPv = true, last = 0, camStage = '', dist = EZ, found = false;
+const MP = new URL('./mediapipe', location.href).href;
+const FACE = new URL('./model/face_landmarker.task', location.href).href;
+const HAND = new URL('./model/hand_landmarker.task', location.href).href;
 
-// ---------- scena: panorama rozcięta na warstwy głębi ----------
-// współrzędne w pikselach panoramy (PW x PH); z = odległość za szybą w cm (ujemna)
-const PW = 1340, PH = 795, OS = 1.15, HOR = 300;          // HOR: wiersz horyzontu łąki w panoramie
-const IMG = {};
-const SRC = {far:'img/p0_far.jpg', mid:'img/p1_mid.webp', ground:'img/p2_ground.webp', tree:'img/s_tree.webp', barn:'img/s_barn.webp', houseL:'img/s_houseL.webp', houseR:'img/s_houseR.webp'};
-const SPR = {"s_tree": [641, 0, 1391, 533], "s_barn": [673, 208, 1063, 451], "s_houseL": [-275, 0, 0, 795], "s_houseR": [1351, 0, 1702, 749]};                                          // prostokąty wycinków w panoramie
-let ready = 0, skyTop = '#2f6fc4';
-for(const k in SRC){ const im = new Image(); im.onload = () => { ready++; if(k === 'far') skyTop = topColor(im); }; im.src = SRC[k]; IMG[k] = im; }
-const NIMG = Object.keys(SRC).length;
-function topColor(img){ try{ const c = document.createElement('canvas'); c.width = 8; c.height = 1; const x = c.getContext('2d'); x.drawImage(img, 0, 0, img.width, 4, 0, 0, 8, 1); const d = x.getImageData(4, 0, 1, 1).data; return `rgb(${d[0]},${d[1]},${d[2]})`; }catch(e){ return skyTop; } }
-// głębokość łąki: płaszczyzna ziemi, więc odległość rośnie jak 1/(y - horyzont)
-const zGround = py => -2500/Math.max(60, py - HOR);
+// ---------- wymiary fizyczne (cm): ekran to szyba z=0, zbiornik za nią ----------
+let W, H, cmpp, hw, hh, D, u, floorY, surfY, EZ;
+const eye = new THREE.Vector3(), eyeT = new THREE.Vector3();
+let gain = 1.2, dir = 1, tracking = false, lastFace = -1e9, lastHand = -1e9, camStage = '', dist = 45;
 
-// lista elementów do narysowania, od najdalszego
-let ITEMS = [];
-function buildItems(){
-  ITEMS = [{img:'far', sx:0, sy:0, sw:PW, sh:PH, z:-320}, {img:'mid', sx:0, sy:0, sw:PW, sh:PH, z:-90}];
-  const step = 10;
-  ITEMS.push({img:'ground', sx:0, sy:0, sw:PW, sh:372, z:zGround(366)});
-  for(let y = 362; y < PH; y += step) ITEMS.push({img:'ground', sx:0, sy:y, sw:PW, sh:Math.min(step + 3, PH - y), z:zGround(y + step/2), strip:true});
-  const b = SPR.s_barn, tr = SPR.s_tree;
-  ITEMS.push({img:'barn', px:b[0], py:b[1], sw:b[2]-b[0], sh:b[3]-b[1], z:zGround(b[3] - 4)});
-  ITEMS.push({img:'tree', px:tr[0], py:tr[1], sw:tr[2]-tr[0], sh:tr[3]-tr[1], z:zGround(tr[3] - 6)});
-  ITEMS.sort((a, b) => a.z - b.z);
-  // domy po bokach okna: najbliżej, tuż za szybą
-  const L = SPR.s_houseL, R = SPR.s_houseR;
-  ITEMS.push({img:'houseL', px:L[0], py:L[1], sw:L[2]-L[0], sh:L[3]-L[1], z:-7, side:-1});
-  ITEMS.push({img:'houseR', px:R[0], py:R[1], sw:R[2]-R[0], sh:R[3]-R[1], z:-7, side:1});
+const renderer = new THREE.WebGLRenderer({canvas:$('gl'), antialias:true});
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#04222a');
+const camera = new THREE.PerspectiveCamera();
+camera.matrixAutoUpdate = true;
+
+const U = {time:{value:0}, cs:{value:1}, floor:{value:0}, hgt:{value:1}};
+const CAUSTIC = `
+uniform float uTime; uniform float uCS; uniform float uFloor; uniform float uHgt;
+varying vec3 vW;
+float caustic(vec2 uv, float time){
+  vec2 p = mod(uv*6.28318, 6.28318) - 250.0; vec2 i = p; float c = 1.0; float inten = .005;
+  for(int n = 0; n < 4; n++){
+    float t = time*(1.0 - (3.5/float(n + 1)));
+    i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
+    c += 1.0/length(vec2(p.x/(sin(i.x + t)/inten), p.y/(cos(i.y + t)/inten)));
+  }
+  c /= 4.0; c = 1.17 - pow(c, 1.4);
+  return clamp(pow(abs(c), 8.0), 0.0, 1.0);
+}`;
+// dokłada kaustyki (falujące światło spod powierzchni) do zwykłego materiału; opcjonalnie ruch wierzchołków
+function patch(mat, o = {}){
+  mat.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, {uTime:U.time, uCS:U.cs, uFloor:U.floor, uHgt:U.hgt});
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', `#include <common>\nuniform float uTime; varying vec3 vW;\n${o.vhead || ''}`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>\n${o.vert || ''}\n{ vec4 wp = vec4(transformed, 1.0);\n#ifdef USE_INSTANCING\n wp = instanceMatrix*wp;\n#endif\n vW = (modelMatrix*wp).xyz; }`);
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', `#include <common>\n${CAUSTIC}`)
+      .replace('#include <fog_fragment>', `{ float h = clamp((vW.y - uFloor)/uHgt, 0.0, 1.0);
+        float c = caustic(vW.xz*uCS + vec2(vW.y*uCS*.35), uTime*.55);
+        gl_FragColor.rgb += vec3(.55, .9, 1.0)*c*${(o.ci ?? .45).toFixed(2)}*(.35 + .65*h); }\n#include <fog_fragment>`);
+  };
+  return mat;
 }
-buildItems();
 
-// pyłki unoszące się tuż za szybą
-const motes = Array.from({length:22}, () => ({x:Math.random()*2-1, y:Math.random()*2-1, z:-2 - Math.random()*22, ph:Math.random()*7, r:.04 + Math.random()*.06}));
+// ---------- pomocnicze ----------
+let seed = 11; const rnd = () => (seed = (seed*16807) % 2147483647)/2147483647;
+const rr = (a, b) => a + (b - a)*Math.random();
+function noise3(x, y, z){ return Math.sin(x*1.7 + Math.sin(y*2.3))*.5 + Math.sin(y*1.3 + z*2.1)*.3 + Math.sin(z*2.9 + x*.7)*.2; }
+function bump(x, z){ return (Math.sin(x/u*1.3) + Math.sin(z/u*1.7 + x/u*.6) + .5*Math.sin(x/u*3.1 - z/u*2.3))*.06*u; }
+function mergeGeos(list){
+  const pos = [], nor = [], col = [];
+  for(const {g, color} of list){
+    const n = g.index ? g.toNonIndexed() : g; n.computeVertexNormals();
+    const p = n.attributes.position.array, q = n.attributes.normal.array;
+    for(let i = 0; i < p.length; i += 3){ pos.push(p[i], p[i+1], p[i+2]); nor.push(q[i], q[i+1], q[i+2]); const c = color(p[i], p[i+1], p[i+2]); col.push(c.r, c.g, c.b); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  return g;
+}
+function canvasTex(w, h, paint){ const c = document.createElement('canvas'); c.width = w; c.height = h; paint(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; }
+
+// ---------- budowa zbiornika ----------
+let world = null, fishes = [], species = [], flakes, F = [], bubbles, B = [], rays = [], plantsMat;
+function buildTank(){
+  if(world) scene.remove(world);
+  world = new THREE.Group(); scene.add(world);
+  seed = 11;
+  floorY = -hh; surfY = hh - Math.min(hh*.14, u*.45);
+  U.cs.value = .55/u; U.floor.value = floorY; U.hgt.value = surfY - floorY;
+  scene.fog = new THREE.Fog('#0d4650', EZ, EZ + D*3);   // mgła tylko w wodzie: liczona od szyby
+
+  // światło
+  world.add(new THREE.HemisphereLight('#bff3ff', '#2a4a44', 1.6));
+  const sun = new THREE.DirectionalLight('#fff1d6', 2.2); sun.position.set(u*.6, hh*4, u); world.add(sun);
+
+  // ściany zbiornika
+  const backTex = canvasTex(4, 256, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#3f8e95'); g.addColorStop(.5, '#17535d'); g.addColorStop(1, '#0b2f36'); x.fillStyle = g; x.fillRect(0, 0, w, h); });
+  const wallMat = patch(new THREE.MeshStandardMaterial({map:backTex, roughness:1}), {ci:.18});
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(2*hw, 2*hh), wallMat); back.position.set(0, 0, -D); world.add(back);
+  const side = new THREE.PlaneGeometry(D, 2*hh);
+  const l = new THREE.Mesh(side, wallMat); l.rotation.y = Math.PI/2; l.position.set(-hw, 0, -D/2); world.add(l);
+  const r = new THREE.Mesh(side, wallMat); r.rotation.y = -Math.PI/2; r.position.set(hw, 0, -D/2); world.add(r);
+  const lid = new THREE.Mesh(new THREE.PlaneGeometry(2*hw, D), new THREE.MeshStandardMaterial({color:'#0e2226', roughness:1})); lid.rotation.x = Math.PI/2; lid.position.set(0, hh, -D/2); world.add(lid);
+
+  // piasek z drobnym ziarnem
+  const sandTex = canvasTex(512, 512, (x, w, h) => { x.fillStyle = '#c9b48a'; x.fillRect(0, 0, w, h); for(let i=0;i<26000;i++){ const v = 150 + Math.random()*90; x.fillStyle = `rgb(${v},${v*.9|0},${v*.7|0})`; x.fillRect(Math.random()*w, Math.random()*h, 1.4, 1.4); } });
+  sandTex.wrapS = sandTex.wrapT = THREE.RepeatWrapping; sandTex.repeat.set(2*hw/(u*1.5), D/(u*1.5));
+  const fg = new THREE.PlaneGeometry(2*hw, D, 60, 40); fg.rotateX(-Math.PI/2);
+  const fp = fg.attributes.position; for(let i=0;i<fp.count;i++){ const x = fp.getX(i), z = fp.getZ(i) - D/2; fp.setY(i, bump(x, z)); }
+  fg.translate(0, floorY, -D/2); fg.computeVertexNormals();
+  world.add(new THREE.Mesh(fg, patch(new THREE.MeshStandardMaterial({map:sandTex, roughness:.95}), {ci:.75})));
+
+  // kamyki
+  const peb = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), patch(new THREE.MeshStandardMaterial({roughness:.8}), {ci:.5}), 140);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s3 = new THREE.Vector3(), p3 = new THREE.Vector3(), c = new THREE.Color();
+  for(let i=0;i<140;i++){
+    const x = (rnd()*2 - 1)*hw*.95, z = -rnd()*D*.95 - .02*D, r0 = u*(.03 + rnd()*.06);
+    q.setFromEuler(new THREE.Euler(rnd()*3, rnd()*3, rnd()*3)); s3.set(r0, r0*.6, r0*.8); p3.set(x, floorY + bump(x, z + D/2 - D/2) + r0*.3, z);
+    peb.setMatrixAt(i, m4.compose(p3, q, s3)); peb.setColorAt(i, c.setHSL(.08 + rnd()*.05, .15 + rnd()*.2, .25 + rnd()*.4));
+  }
+  world.add(peb);
+
+  // kamienie
+  const rockMat = patch(new THREE.MeshStandardMaterial({color:'#7d7468', roughness:.95, flatShading:false}), {ci:.6});
+  const rocks = [[-.55, .78, .5], [.6, .62, .4], [-.15, .9, .3], [.25, .35, .28], [-.8, .3, .25]];
+  for(const [fx, fz, fr] of rocks){
+    const g = new THREE.SphereGeometry(1, 56, 36), p = g.attributes.position, sd = rnd()*10;
+    for(let i=0;i<p.count;i++){ const v = new THREE.Vector3().fromBufferAttribute(p, i); const n = 1 + .28*noise3(v.x*1.6 + sd, v.y*1.6, v.z*1.6) + .08*noise3(v.x*5, v.y*5 + sd, v.z*5); v.multiplyScalar(n); p.setXYZ(i, v.x, v.y, v.z); }
+    g.computeVertexNormals();
+    const rk = new THREE.Mesh(g, rockMat), R = u*fr*1.5;
+    rk.scale.set(R*1.3, R*.85, R); rk.rotation.set(0, rnd()*6, rnd()*.4);
+    rk.position.set(fx*hw, floorY + R*.25, -fz*D); world.add(rk);
+  }
+
+  // rośliny: wstęgi falujące w prądzie (ruch liczony na karcie graficznej)
+  const blade = new THREE.PlaneGeometry(1, 1, 2, 16); blade.translate(0, .5, 0);
+  { const bp = blade.attributes.position, bc = []; for(let i=0;i<bp.count;i++){ const y = bp.getY(i); bp.setX(i, bp.getX(i)*(1 - .8*y)); bp.setZ(i, Math.abs(bp.getX(i))*.6); const v = .45 + .7*y; bc.push(v, v, v); } blade.setAttribute('color', new THREE.Float32BufferAttribute(bc, 3)); blade.computeVertexNormals(); }
+  plantsMat = patch(new THREE.MeshStandardMaterial({side:THREE.DoubleSide, roughness:.55, vertexColors:true}), {ci:.35,
+    vert:`float ph = instanceMatrix[3].x*2.1 + instanceMatrix[3].z*1.7; float k = pow(position.y, 1.6);
+          transformed.x += sin(uTime*1.1 + ph + position.y*2.2)*.22*k; transformed.z += cos(uTime*.8 + ph*1.3 + position.y*1.7)*.15*k;`});
+  const NP = 220, plants = new THREE.InstancedMesh(blade, plantsMat, NP);
+  const clumps = [[-.85, .85], [-.6, .95], [.75, .9], [.9, .7], [.1, .97], [-.3, .6], [.45, .55], [-.95, .45], [.95, .3]];
+  for(let i=0;i<NP;i++){
+    const [cx, cz] = clumps[i % clumps.length], x = cx*hw + (rnd() - .5)*u*.5, z = -cz*D + (rnd() - .5)*u*.4;
+    const tall = cz > .8 ? (surfY - floorY)*(.55 + rnd()*.4) : u*(.5 + rnd()*.9);
+    q.setFromEuler(new THREE.Euler(0, rnd()*6, (rnd() - .5)*.25)); s3.set(u*(.05 + rnd()*.05), tall, u*.05); p3.set(x, floorY - u*.02, z);
+    plants.setMatrixAt(i, m4.compose(p3, q, s3)); plants.setColorAt(i, c.setHSL(.27 + rnd()*.1, .55 + rnd()*.3, .22 + rnd()*.2));
+  }
+  world.add(plants);
+
+  // powierzchnia wody od spodu
+  const sm = new THREE.ShaderMaterial({transparent:true, side:THREE.DoubleSide, depthWrite:false, uniforms:{uTime:U.time, uCS:U.cs, uFloor:U.floor, uHgt:U.hgt},
+    vertexShader:`varying vec3 vW; void main(){ vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
+    fragmentShader:`${CAUSTIC}\nvoid main(){ float c = caustic(vW.xz*uCS*1.3, uTime*.7); gl_FragColor = vec4(mix(vec3(.42,.78,.86), vec3(1.), c), .32 + c*.45); }`});
+  const surf = new THREE.Mesh(new THREE.PlaneGeometry(2*hw, D), sm); surf.rotation.x = Math.PI/2; surf.position.set(0, surfY, -D/2); world.add(surf);
+
+  // promienie światła
+  const rayTex = canvasTex(64, 256, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(255,255,255,.9)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); const g2 = x.createLinearGradient(0, 0, w, 0); g2.addColorStop(0, 'rgba(0,0,0,1)'); g2.addColorStop(.5, 'rgba(0,0,0,0)'); g2.addColorStop(1, 'rgba(0,0,0,1)'); x.globalCompositeOperation = 'destination-out'; x.fillStyle = g2; x.fillRect(0, 0, w, h); });
+  rays = [];
+  for(let i=0;i<6;i++){
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(u*(.4 + rnd()*.8), surfY - floorY), new THREE.MeshBasicMaterial({map:rayTex, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, color:'#bdf3ff', opacity:.18, fog:false}));
+    m.position.set((rnd()*2 - 1)*hw*.8, (surfY + floorY)/2, -D*(.25 + rnd()*.7)); m.rotation.z = -.25 + rnd()*.15; m.userData.ph = rnd()*6;
+    world.add(m); rays.push(m);
+  }
+
+  // bąbelki z kamienia napowietrzającego
+  bubbles = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), new THREE.MeshStandardMaterial({color:'#e8fbff', roughness:.05, metalness:.1, transparent:true, opacity:.55, emissive:'#2a5a66'}), 60);
+  world.add(bubbles); B = [];
+  const air = new THREE.Vector3(hw*.78, floorY + u*.08, -D*.85);
+  const stone = new THREE.Mesh(new THREE.CylinderGeometry(u*.12, u*.14, u*.12, 16), patch(new THREE.MeshStandardMaterial({color:'#5b5f63', roughness:.9}))); stone.position.copy(air); world.add(stone);
+  for(let i=0;i<60;i++) B.push({p:air.clone().add(new THREE.Vector3(0, rnd()*(surfY - floorY), 0)), r:u*(.015 + rnd()*.03), ph:rnd()*6, v:u*(1.2 + rnd()*.8), origin:air});
+
+  buildFish();
+  buildFlakes();
+}
+
+// ---------- ryby ----------
+function fishGeo(kind){
+  const pts = [];
+  for(let i=0;i<=18;i++){ const t = i/18; const r = .035 + .15*Math.pow(Math.sin(Math.PI*Math.min(1, t*1.02)), .8)*(t < .12 ? t/.12*.7 + .3 : 1); pts.push(new THREE.Vector2(Math.max(.001, i === 18 ? .001 : r), t - .5)); }
+  const body = new THREE.LatheGeometry(pts, 16); body.rotateZ(-Math.PI/2);
+  body.scale(1, kind === 'angel' ? 1.7 : kind === 'platy' ? 1.2 : 1, .46);
+  const tri = a => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(a, 3)); return g; };
+  const tailH = kind === 'angel' ? .32 : .2;
+  const tail = tri([-.47, 0, 0, -.82, tailH, 0, -.82, -tailH, 0]);
+  const dorsal = kind === 'angel' ? tri([.15, .2, 0, -.25, .2, 0, -.45, .62, 0]) : tri([.08, .14, 0, -.22, .13, 0, -.26, .27, 0]);
+  const ventral = kind === 'angel' ? tri([.1, -.2, 0, -.25, -.2, 0, -.45, -.62, 0]) : tri([-.05, -.13, 0, -.25, -.12, 0, -.28, -.2, 0]);
+  const eyeL = new THREE.SphereGeometry(.035, 8, 6).translate(.33, .04, .07), eyeR = new THREE.SphereGeometry(.035, 8, 6).translate(.33, .04, -.07);
+  const C = (h, s, l) => new THREE.Color().setHSL(h, s, l);
+  let bodyCol;
+  if(kind === 'neon') bodyCol = (x, y) => y > -.005 && y < .07 && x > -.38 && x < .3 ? C(.53, 1, .55) : (y < -.005 && x < .08 && x > -.47 ? C(.99, .9, .5) : C(.12, .2, y > 0 ? .55 : .8));
+  else if(kind === 'platy') bodyCol = (x, y) => C(.06 + y*.1, .95, .5 + y*.6);
+  else bodyCol = (x, y) => (Math.sin(x*28) > .55 ? C(.1, .3, .15) : C(.13, .25, .86 + y*.1));
+  const finCol = kind === 'neon' ? () => C(.55, .2, .85) : kind === 'platy' ? () => C(.03, .9, .45) : () => C(.12, .3, .8);
+  const black = () => new THREE.Color('#060606');
+  return mergeGeos([{g:body, color:bodyCol}, {g:tail, color:finCol}, {g:dorsal, color:finCol}, {g:ventral, color:finCol}, {g:eyeL, color:black}, {g:eyeR, color:black}]);
+}
+function buildFish(){
+  species = [{kind:'neon', n:30, len:.2, speed:1.5, school:1}, {kind:'platy', n:6, len:.32, speed:1.1, school:0}, {kind:'angel', n:3, len:.45, speed:.7, school:0}];
+  fishes = [];
+  for(const sp of species){
+    const g = fishGeo(sp.kind);
+    g.setAttribute('aPhase', new THREE.InstancedBufferAttribute(new Float32Array(sp.n).map(() => Math.random()*6), 1));
+    g.setAttribute('aSpd', new THREE.InstancedBufferAttribute(new Float32Array(sp.n).fill(6), 1));
+    const mat = patch(new THREE.MeshStandardMaterial({vertexColors:true, roughness:.35, metalness:.15, side:THREE.DoubleSide}), {ci:.4,
+      vhead:'attribute float aPhase; attribute float aSpd;',
+      vert:`float tl = clamp(.2 - position.x, 0., 1.2); transformed.z += sin(uTime*aSpd + aPhase - position.x*5.5)*.13*tl*tl;`});
+    sp.mesh = new THREE.InstancedMesh(g, mat, sp.n); sp.mesh.frustumCulled = false; world.add(sp.mesh);
+    for(let i=0;i<sp.n;i++){
+      const f = {sp, i, p:new THREE.Vector3((Math.random()*2 - 1)*hw*.7, floorY + (surfY - floorY)*(.25 + Math.random()*.6), -D*(.2 + Math.random()*.7)),
+        v:new THREE.Vector3(Math.random() - .5, (Math.random() - .5)*.2, Math.random() - .5).setLength(u*.3), target:new THREE.Vector3(), tt:0, gulp:0, L:sp.len*u*(.85 + Math.random()*.3)};
+      fishes.push(f);
+    }
+  }
+}
+const tmpV = new THREE.Vector3(), tmpA = new THREE.Vector3(), tmpM = new THREE.Matrix4(), tmpS = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+function updateFish(dt, t){
+  const mx = hw - u*.35, my0 = floorY + u*.35, my1 = surfY - u*.2, mz0 = -D + u*.35, mz1 = -u*.4;
+  const center = new THREE.Vector3(), avgV = new THREE.Vector3(); let ns = 0;
+  for(const f of fishes) if(f.sp.school){ center.add(f.p); avgV.add(f.v); ns++; }
+  if(ns){ center.divideScalar(ns); avgV.divideScalar(ns); }
+  for(const f of fishes){
+    const acc = tmpA.set(0, 0, 0), maxS = f.sp.speed*u;
+    // jedzenie: najbliższy płatek w zasięgu
+    let best = null, bd = 1e9;
+    for(const k of F){ if(!k.alive) continue; const d = k.p.distanceToSquared(f.p); if(d < bd){ bd = d; best = k; } }
+    const hungry = best && bd < (u*4.5)**2;
+    if(hungry){
+      acc.add(tmpV.copy(best.p).sub(f.p).setLength(maxS*3.5));
+      if(Math.sqrt(bd) < f.L*.5){ best.alive = false; f.gulp = 1; plop(); }
+    } else {
+      if(t > f.tt || f.p.distanceTo(f.target) < u*.5){ f.target.set((Math.random()*2 - 1)*mx, my0 + Math.random()*(my1 - my0), mz0 + Math.random()*(mz1 - mz0)); f.tt = t + 3 + Math.random()*5; }
+      acc.add(tmpV.copy(f.target).sub(f.p).setLength(maxS*.8));
+      if(f.sp.school && ns){ acc.add(tmpV.copy(center).sub(f.p).multiplyScalar(.9)); acc.add(tmpV.copy(avgV).sub(f.v).multiplyScalar(.8)); }
+      // ciekawość: lekko podpływają do miejsca, z którego patrzysz
+      if(tracking && performance.now() - lastFace < 800) acc.add(tmpV.set(eye.x*.5, eye.y*.5, mz1).sub(f.p).setLength(maxS*.25));
+    }
+    for(const g of fishes){ if(g === f) continue; const d = f.p.distanceTo(g.p); if(d < (f.L + g.L)*.6 && d > 0) acc.add(tmpV.copy(f.p).sub(g.p).setLength(maxS*2.5*(1 - d/((f.L + g.L)*.6)))); }
+    const wall = (val, lo, hi, axis) => { if(val < lo) acc[axis] += (lo - val)*8; if(val > hi) acc[axis] -= (val - hi)*8; };
+    wall(f.p.x, -mx, mx, 'x'); wall(f.p.y, my0, my1, 'y'); wall(f.p.z, mz0, mz1, 'z');
+    f.v.addScaledVector(acc, dt);
+    f.v.y *= .96;
+    const lim = hungry ? maxS*1.8 : maxS; if(f.v.length() > lim) f.v.setLength(lim); if(f.v.length() < maxS*.15) f.v.setLength(maxS*.15);
+    f.p.addScaledVector(f.v, dt);
+    f.gulp = Math.max(0, f.gulp - dt*3);
+    // orientacja: oś x ryby wzdłuż prędkości
+    const fw = tmpV.copy(f.v).normalize(); fw.y = THREE.MathUtils.clamp(fw.y, -.6, .6); fw.normalize();
+    const right = new THREE.Vector3().crossVectors(fw, up).normalize(), u2 = new THREE.Vector3().crossVectors(right, fw);
+    const sc = f.L*(1 + f.gulp*.12);
+    tmpM.makeBasis(fw, u2, right); tmpM.scale(tmpS.set(sc, sc, sc)); tmpM.setPosition(f.p);
+    f.sp.mesh.setMatrixAt(f.i, tmpM);
+    f.sp.mesh.geometry.attributes.aSpd.array[f.i] = 4 + f.v.length()/u*5;
+  }
+  for(const sp of species){ sp.mesh.instanceMatrix.needsUpdate = true; sp.mesh.geometry.attributes.aSpd.needsUpdate = true; }
+}
+
+// ---------- karma ----------
+const MAXF = 260;
+function buildFlakes(){
+  flakes = new THREE.InstancedMesh(new THREE.CircleGeometry(1, 5), new THREE.MeshStandardMaterial({roughness:.8, side:THREE.DoubleSide}), MAXF);
+  flakes.frustumCulled = false; world.add(flakes); F = [];
+  const cols = ['#d9822b', '#c4562a', '#e0b04a', '#7d9a3a', '#b0442c'], c = new THREE.Color();
+  for(let i=0;i<MAXF;i++){ F.push({alive:false, p:new THREE.Vector3(), v:new THREE.Vector3(), rot:new THREE.Euler(), age:0, rest:0, s:1}); flakes.setColorAt(i, c.set(cols[i % cols.length])); }
+}
+let fIdx = 0;
+function spawnFlake(x, z){
+  const k = F[fIdx]; fIdx = (fIdx + 1) % MAXF;
+  k.alive = true; k.age = 0; k.rest = 0; k.s = u*(.035 + Math.random()*.03);
+  k.p.set(THREE.MathUtils.clamp(x + (Math.random() - .5)*u*.3, -hw*.95, hw*.95), surfY - u*.01, THREE.MathUtils.clamp(z + (Math.random() - .5)*u*.3, -D*.95, -u*.15));
+  k.v.set((Math.random() - .5)*u*.2, 0, (Math.random() - .5)*u*.2); k.float = .4 + Math.random()*1.2; k.ph = Math.random()*6;
+  k.rot.set(Math.random()*6, Math.random()*6, 0);
+}
+function updateFlakes(dt, t){
+  for(let i=0;i<MAXF;i++){
+    const k = F[i];
+    if(!k.alive){ tmpM.makeScale(0, 0, 0); flakes.setMatrixAt(i, tmpM); continue; }
+    k.age += dt;
+    const fy = floorY + bump(k.p.x, k.p.z) + u*.01;
+    if(k.age < k.float){ k.p.addScaledVector(k.v, dt); k.v.multiplyScalar(.97); }
+    else if(k.p.y > fy){ k.p.y -= u*(.28 + .12*Math.sin(k.ph))*dt; k.p.x += Math.sin(t*2 + k.ph)*u*.12*dt; k.p.z += Math.cos(t*1.6 + k.ph)*u*.08*dt; k.rot.x += dt*1.5; k.rot.y += dt; }
+    else { k.p.y = fy; k.rest += dt; if(k.rest > 25) k.alive = false; }
+    const s = k.s*(k.rest > 20 ? (25 - k.rest)/5 : 1);
+    tmpM.makeRotationFromEuler(k.rot); tmpM.scale(tmpS.set(s, s, s)); tmpM.setPosition(k.p); flakes.setMatrixAt(i, tmpM);
+  }
+  flakes.instanceMatrix.needsUpdate = true;
+}
+// punkt ekranu (px) -> punkt w zbiorniku na głębokości z (cm), wzdłuż promienia od oka
+function screenToTank(px, py, z){
+  const sx = (px - W/2)*cmpp, sy = (H/2 - py)*cmpp, k = (eye.z - z)/eye.z;
+  return new THREE.Vector3(eye.x + (sx - eye.x)*k, eye.y + (sy - eye.y)*k, z);
+}
+let sprinkleAcc = 0;
+function sprinkle(px, py, dt, rate = 14){
+  sprinkleAcc += dt*rate;
+  while(sprinkleAcc >= 1){ sprinkleAcc--; const z = -D*(.12 + Math.random()*.35), p = screenToTank(px, py, z); spawnFlake(p.x, z); }
+}
+
+let actx = null, lastPlop = 0;
+function plop(){
+  const now = performance.now(); if(now - lastPlop < 90) return; lastPlop = now;
+  try{ actx = actx || new AudioContext(); const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(900 + Math.random()*400, t); o.frequency.exponentialRampToValueAtTime(260, t + .08);
+    g.gain.setValueAtTime(.06, t); g.gain.exponentialRampToValueAtTime(.001, t + .1); o.connect(g).connect(actx.destination); o.start(t); o.stop(t + .12); }catch(e){}
+}
+
+// ---------- kamera z perspektywą okna (off-axis) ----------
+function updateCamera(){
+  const n = .5, f = D*6 + 200;
+  camera.position.copy(eye); camera.quaternion.identity(); camera.updateMatrixWorld();
+  const l = (-hw - eye.x)*n/eye.z, r = (hw - eye.x)*n/eye.z, t = (hh - eye.y)*n/eye.z, b = (-hh - eye.y)*n/eye.z;
+  camera.projectionMatrix.makePerspective(l, r, t, b, n, f);
+  camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+  scene.fog.near = eye.z; scene.fog.far = eye.z + D*3.2;
+  $('sheen').style.transform = `translate(${-eye.x/cmpp*1.4}px, ${eye.y/cmpp*.6}px)`;
+}
 
 function resize(){
-  const dpr = Math.min(devicePixelRatio || 1, 2);
-  W = innerWidth; H = innerHeight; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  W = innerWidth; H = innerHeight;
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.setSize(W, H, false);
   cmpp = matchMedia('(pointer:coarse)').matches ? 2.54/160 : 2.54/96;
-  hw = W*cmpp/2; hh = H*cmpp/2;
+  hw = W*cmpp/2; hh = H*cmpp/2; u = Math.min(hw, hh); D = Math.max(hw, hh)*1.5;
+  EZ = matchMedia('(pointer:coarse)').matches ? 35 : 55;
+  if(!tracking){ eye.set(0, hh*.35, EZ); eyeT.copy(eye); }
+  buildTank();
 }
 addEventListener('resize', resize); resize();
 
-// rzut przez szybę: punkt (x,y,z) za oknem na płaszczyznę ekranu, widziany z pozycji oka
-function P(x, y, z){ const t = eye.z/(eye.z - z); return [W/2 + (eye.x + (x - eye.x)*t)/cmpp, H/2 - (eye.y + (y - eye.y)*t)/cmpp, t/cmpp]; }
-// piksel panoramy -> punkt w świecie na głębokości z (tak, by przy patrzeniu na wprost wszystko się pokrywało)
-function scale(){ let s = 2*hh*OS/PH; if(PW*s < 2*hw*OS) s = 2*hw*OS/PW; return s; }
-function rectOf(it){
-  const s = scale(), cx = PW*.45, cy = PH*.5, ey0 = hh*BY, k = (EZ - it.z)/EZ;
-  let x0 = ((it.px ?? it.sx) - cx)*s, y0 = (cy - (it.py ?? it.sy))*s;
-  if(it.side){ x0 = it.side < 0 ? -hw*.74 - it.sw*s : hw*.74; }        // domy przyklejone do krawędzi okna
-  const x1 = x0 + it.sw*s, y1 = y0 - it.sh*s;
-  return [P(x0*k, ey0 + (y0 - ey0)*k, it.z), P(x1*k, ey0 + (y1 - ey0)*k, it.z)];
-}
-// czy panorama zakrywa cały ekran (boki i dół), żeby nie było dziur
-function covers(){
-  for(const it of ITEMS){
-    if(!(it.img === 'far' || it.img === 'mid' || (it.strip && it.sy + it.sh >= PH))) continue;
-    const [a, b] = rectOf(it);
-    if(a[0] > 0 || b[0] < W) return false;
-    if(it.strip && b[1] < H) return false;
-  }
-  return true;
-}
-function clampEye(){
-  const bx = 0, by = hh*BY, tx = eye.x, ty = eye.y;
-  if(covers()) return;
-  let lo = 0, hi = 1;
-  for(let i=0;i<12;i++){ const m = (lo + hi)/2; eye.x = bx + (tx - bx)*m; eye.y = by + (ty - by)*m; covers() ? lo = m : hi = m; }
-  eye.x = bx + (tx - bx)*lo; eye.y = by + (ty - by)*lo;
-}
-
-function draw(now){
-  ctx.fillStyle = skyTop; ctx.fillRect(0, 0, W, H);
-  if(ready < NIMG){ ctx.fillStyle = '#fff'; ctx.font = '600 16px Barlow,sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Ładuję widok…', W/2, H/2); return; }
-  for(const it of ITEMS){
-    const im = IMG[it.img], [a, b] = rectOf(it);
-    const sx = it.px !== undefined ? 0 : it.sx, sy = it.px !== undefined ? 0 : it.sy;
-    ctx.drawImage(im, sx, sy, it.sw, it.sh, a[0], a[1], b[0] - a[0], b[1] - a[1]);
-  }
-  // pyłki w złotym świetle
-  for(const m of motes){
-    const p = P(m.x*hw*1.2 + Math.sin(now/2100 + m.ph)*.6, m.y*hh + Math.sin(now/1700 + m.ph*2)*.4, m.z), r = m.r*p[2];
-    ctx.fillStyle = `rgba(255,244,210,${.35 + .3*Math.sin(now/800 + m.ph)})`; ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(.6, r), 0, 7); ctx.fill();
-  }
-  const v = ctx.createRadialGradient(W/2, H/2, Math.min(W, H)*.45, W/2, H/2, Math.max(W, H)*.75);
-  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.25)');
-  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
-}
-
-// ---------- śledzenie oczu (MediaPipe Face Landmarker, lokalnie) ----------
+// ---------- śledzenie twarzy i dłoni (MediaPipe, lokalnie) ----------
+let video = null, faceLm = null, handLm = null, lastVT = -1, flip = 0, lastFaceRes = null, lastHandRes = null;
+const hand = {seen:false, x:0, y:0, pinch:false};
 async function startCam(){
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
-    throw new Error('ta przeglądarka nie daje dostępu do kamery. Otwórz link w Safari lub Chrome, nie w aplikacji (Messenger, GitHub, Claude)');
+  if(!navigator.mediaDevices?.getUserMedia) throw new Error('ta przeglądarka nie daje dostępu do kamery. Otwórz link w Safari lub Chrome, nie w aplikacji (Messenger, GitHub, Claude)');
   $('msg').textContent = 'Proszę o dostęp do kamery…';
   video = document.createElement('video');
   video.setAttribute('playsinline', ''); video.setAttribute('autoplay', ''); video.muted = true; video.playsInline = true;
   video.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none';
-  document.body.appendChild(video);                       // iOS odświeża klatki tylko gdy wideo jest w DOM
+  document.body.appendChild(video);
   video.srcObject = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:640}, height:{ideal:480}}, audio:false});
   await video.play();
   await new Promise(r => video.videoWidth ? r() : video.addEventListener('loadedmetadata', r, {once:true}));
   const pvc = $('pv'); pvc.width = 200; pvc.height = Math.round(200*video.videoHeight/video.videoWidth) || 150; pvc.style.display = 'block';
 }
-async function loadModel(){
-  camStage = 'ładuję model…';
+async function loadModels(){
+  camStage = 'ładuję modele…';
   const vision = await import(MP + '/vision_bundle.mjs');
   const files = await vision.FilesetResolver.forVisionTasks(MP + '/wasm');
-  const opts = d => ({baseOptions:{modelAssetPath:MODEL, delegate:d}, runningMode:'VIDEO', numFaces:1});
-  try{ lm = await vision.FaceLandmarker.createFromOptions(files, opts('GPU')); }
-  catch(e){ camStage = 'model na CPU…'; lm = await vision.FaceLandmarker.createFromOptions(files, opts('CPU')); }
+  const mk = async (cls, path, extra) => { try{ return await cls.createFromOptions(files, {baseOptions:{modelAssetPath:path, delegate:'GPU'}, runningMode:'VIDEO', ...extra}); } catch(e){ return await cls.createFromOptions(files, {baseOptions:{modelAssetPath:path, delegate:'CPU'}, runningMode:'VIDEO', ...extra}); } };
+  faceLm = await mk(vision.FaceLandmarker, FACE, {numFaces:1});
+  camStage = 'ładuję model dłoni…';
+  handLm = await mk(vision.HandLandmarker, HAND, {numHands:1});
   camStage = '';
 }
-let lastVT = -1;
 function track(now){
   if(!video || video.readyState < 2 || video.currentTime === lastVT) return;
   lastVT = video.currentTime;
-  if(!lm){ drawPv(null); return; }
-  const r = lm.detectForVideo(video, now), fc = r.faceLandmarks && r.faceLandmarks[0];
-  found = !!fc; drawPv(fc); if(!fc) return;
-  const vw = video.videoWidth, vh = video.videoHeight;
-  const FL = 2*Math.tan(32.5*Math.PI/180), fovW = vw >= vh ? FL : FL*vw/vh, fovH = vw >= vh ? FL*vh/vw : FL;
-  const A = {x:1 - fc[468].x, y:fc[468].y}, B = {x:1 - fc[473].x, y:fc[473].y};   // tęczówki, w lustrze
-  const ipd = Math.hypot((B.x - A.x)*vw, (B.y - A.y)*vh)/vw;
-  dist = Math.min(90, Math.max(15, 6.3/(ipd*fovW)));
-  const hx = ((A.x + B.x)/2 - .5)*fovW*dist, hy = -((A.y + B.y)/2 - .5)*fovH*dist;
-  eyeT.x = dir*hx*gain;                                   // dir=-1: głowa w prawo, widok w lewo
-  eyeT.y = dir*hy*gain + hh*BY;
-  eyeT.z = dist;
-  lastSeen = now;
+  if(!faceLm){ drawPv(); return; }
+  flip ^= 1;
+  if(flip || !handLm){
+    const r = faceLm.detectForVideo(video, now), fc = r.faceLandmarks?.[0]; lastFaceRes = fc || null;
+    if(fc){
+      const vw = video.videoWidth, vh = video.videoHeight, FL = 2*Math.tan(32.5*Math.PI/180), fovW = vw >= vh ? FL : FL*vw/vh, fovH = vw >= vh ? FL*vh/vw : FL;
+      const A = {x:1 - fc[468].x, y:fc[468].y}, B = {x:1 - fc[473].x, y:fc[473].y};
+      const ipd = Math.hypot((B.x - A.x)*vw, (B.y - A.y)*vh)/vw;
+      dist = Math.min(100, Math.max(15, 6.3/(ipd*fovW)));
+      const hx = ((A.x + B.x)/2 - .5)*fovW*dist, hy = -((A.y + B.y)/2 - .5)*fovH*dist;
+      eyeT.set(dir*hx*gain, dir*(hy + hh)*gain, dist);                 // kamera jest nad górną krawędzią ekranu
+      lastFace = now;
+    }
+  } else {
+    const r = handLm.detectForVideo(video, now), h = r.landmarks?.[0]; lastHandRes = h || null;
+    if(h){
+      const size = Math.hypot(h[0].x - h[9].x, h[0].y - h[9].y) || .1, pd = Math.hypot(h[4].x - h[8].x, h[4].y - h[8].y)/size;
+      hand.pinch = hand.pinch ? pd < .55 : pd < .35;
+      const mx = 1 - (h[4].x + h[8].x)/2, my = (h[4].y + h[8].y)/2;
+      const tx = W/2 + (mx - .5)*W*1.5, ty = H/2 + (my - .5)*H*1.5;
+      hand.x += (tx - hand.x)*.5; hand.y += (ty - hand.y)*.5; hand.seen = true; lastHand = now;
+    }
+  }
+  drawPv();
 }
-function drawPv(fc){
-  if(!showPv) return;
-  const c = $('pv'), p = c.getContext('2d'), w = c.width, h = c.height;
+function drawPv(){
+  const c = $('pv'), p = c.getContext('2d'), w = c.width, h = c.height, fc = lastFaceRes, hd = lastHandRes;
   p.save(); p.scale(-1, 1); p.drawImage(video, -w, 0, w, h); p.restore();
   c.className = fc ? 'ok' : camStage ? '' : 'no';
-  if(fc){
-    p.fillStyle = 'rgba(76,208,125,.8)'; for(let i=0;i<468;i+=4) p.fillRect((1 - fc[i].x)*w - 1, fc[i].y*h - 1, 2, 2);
-    p.fillStyle = '#f6c632'; for(const k of [468, 473]){ p.beginPath(); p.arc((1 - fc[k].x)*w, fc[k].y*h, 4, 0, 7); p.fill(); }
-  }
+  if(fc){ p.fillStyle = '#f6c632'; for(const k of [468, 473]){ p.beginPath(); p.arc((1 - fc[k].x)*w, fc[k].y*h, 4, 0, 7); p.fill(); } }
+  if(hd){ p.fillStyle = hand.pinch ? '#ffd46a' : '#7fe0ff'; for(const k of hd){ p.fillRect((1 - k.x)*w - 2, k.y*h - 2, 4, 4); } }
   p.fillStyle = 'rgba(0,0,0,.6)'; p.fillRect(0, h - 26, w, 26);
   p.fillStyle = fc ? '#4cd07d' : camStage ? '#f6c632' : '#ff6b5e'; p.font = '600 16px Barlow,sans-serif'; p.textAlign = 'center';
-  p.fillText(fc ? 'twarz OK · ' + Math.round(dist) + ' cm' : camStage || 'brak twarzy', w/2, h - 8);
+  p.fillText(camStage || (fc ? 'twarz OK · ' + Math.round(dist) + ' cm' : 'brak twarzy'), w/2, h - 8);
 }
 
-// bez kamery: mysz, przeciąganie palcem lub żyroskop
-addEventListener('pointermove', e => { if(tracking || (e.pointerType !== 'mouse' && !e.buttons)) return; eyeT.x = dir*(e.clientX/W - .5)*2*hw*gain*2; eyeT.y = dir*(e.clientY/H - .5)*-2*hh*gain + hh*BY; eyeT.z = EZ; });
-addEventListener('deviceorientation', e => { if(tracking || e.gamma == null) return; eyeT.x = Math.max(-30, Math.min(30, e.gamma))/30*hw*2*gain; eyeT.y = -Math.max(-30, Math.min(30, e.beta - 45))/30*hh*gain + hh*BY; eyeT.z = EZ; });
+// ---------- sterowanie bez kamery ----------
+let touch = null;
+addEventListener('pointerdown', e => { if(e.target.closest('.screen, button, #pv')) return; touch = {x:e.clientX, y:e.clientY}; });
+addEventListener('pointermove', e => { if(touch){ touch.x = e.clientX; touch.y = e.clientY; } if(!tracking && e.pointerType === 'mouse'){ eyeT.x = (e.clientX/W - .5)*2*hw*gain*1.5; eyeT.y = -(e.clientY/H - .5)*2*hh*gain + hh*.35; } });
+addEventListener('pointerup', () => touch = null); addEventListener('pointercancel', () => touch = null);
+addEventListener('deviceorientation', e => { if(tracking || e.gamma == null) return; eyeT.x = Math.max(-30, Math.min(30, e.gamma))/30*hw*1.5*gain*dir; eyeT.y = -Math.max(-30, Math.min(30, e.beta - 45))/30*hh*gain*dir; });
 
+// ---------- pętla ----------
+let last = 0;
 function frame(now){
-  const dt = Math.min(.05, (now - (last || now))/1000); last = now;
-  if(tracking){ track(now); if(now - lastSeen > 900){ eyeT.x *= .97; eyeT.y += (hh*BY - eyeT.y)*.03; } }
-  const a = 1 - Math.pow(.0004, dt);
-  eye.x += (eyeT.x - eye.x)*a; eye.y += (eyeT.y - eye.y)*a; eye.z += (eyeT.z - eye.z)*a;
-  if(ready >= NIMG) clampEye();
-  draw(now);
-  if(camStage !== 'błąd modelu') $('status').textContent = !tracking ? '' : camStage ? 'kamera działa, ' + camStage : (found ? '' : 'nie widzę twarzy');
+  const dt = Math.min(.05, (now - (last || now))/1000), t = now/1000; last = now;
+  U.time.value = t;
+  if(tracking) track(now);
+  if(tracking && now - lastFace > 1000){ eyeT.x *= .97; eyeT.y += (hh*.35 - eyeT.y)*.03; eyeT.z += (EZ - eyeT.z)*.03; }
+  const a = 1 - Math.pow(.0005, dt); eye.lerp(eyeT, a);
+  // karmienie: szczypta dłonią lub dotyk
+  const handOn = tracking && now - lastHand < 400;
+  const cur = $('cursor');
+  if(handOn){ cur.style.opacity = 1; cur.style.transform = `translate(${hand.x}px, ${hand.y}px)`; cur.classList.toggle('pinch', hand.pinch); if(hand.pinch) sprinkle(hand.x, hand.y, dt); }
+  else cur.style.opacity = 0;
+  if(touch) sprinkle(touch.x, touch.y, dt, 18);
+  for(const b of B){ b.p.y += b.v*dt; b.p.x = b.origin.x + Math.sin(t*3 + b.ph)*u*.06*(b.p.y - floorY)/(surfY - floorY); if(b.p.y > surfY) b.p.copy(b.origin).add(tmpV.set(0, -Math.random()*u*.3, 0)); tmpM.makeScale(b.r, b.r, b.r); tmpM.setPosition(b.p); bubbles.setMatrixAt(B.indexOf(b), tmpM); }
+  bubbles.instanceMatrix.needsUpdate = true;
+  for(const r of rays) r.material.opacity = .12 + .08*Math.sin(t*.6 + r.userData.ph);
+  updateFish(dt, t); updateFlakes(dt, t);
+  updateCamera();
+  renderer.render(scene, camera);
+  if(camStage !== 'błąd modelu') $('status').textContent = !tracking ? '' : camStage ? 'kamera działa, ' + camStage : '';
+  $('chFace').classList.toggle('on', tracking && now - lastFace < 500);
+  $('chHand').classList.toggle('on', handOn);
+  $('chPinch').classList.toggle('on', handOn && hand.pinch);
   requestAnimationFrame(frame);
 }
-eye.y = eyeT.y = hh*BY;
 requestAnimationFrame(frame);
 
-function hint(txt){ const h = $('hint'); h.textContent = txt; h.style.opacity = 1; setTimeout(() => h.style.opacity = 0, 5000); }
+function hint(txt, ms = 7000){ const h = $('hint'); h.textContent = txt; h.style.opacity = 1; clearTimeout(hint.t); hint.t = setTimeout(() => h.style.opacity = 0, ms); }
 $('gain').addEventListener('input', e => gain = +e.target.value);
 $('go').addEventListener('click', async () => {
   const why = err => (err && (err.name && err.name !== 'Error' ? err.name + ' – ' : '') + (err.message || err));
   try{ await startCam(); }
   catch(err){ console.log(err); $('msg').textContent = 'Kamera: ' + (err && err.name === 'NotAllowedError' ? 'odmówiono dostępu. Zezwól na kamerę w ustawieniach przeglądarki dla tej strony i odśwież.' : why(err)); return; }
-  tracking = true; lastSeen = performance.now(); $('start').classList.add('hidden'); $('dirBtn').style.display = 'block';
-  hint('Rusz głową, żeby wyjrzeć za krawędź okna');
-  try{ await loadModel(); }
-  catch(err){ console.log(err); camStage = 'błąd modelu'; $('status').textContent = 'Model twarzy się nie wczytał: ' + why(err); }
+  tracking = true; $('start').classList.add('hidden'); $('dirBtn').style.display = 'block'; $('chips').classList.remove('hidden');
+  hint('Ruszaj głową. Unieś dłoń, złącz kciuk z palcem wskazującym i pocieraj, a posypie się karma.', 9000);
+  try{ await loadModels(); }
+  catch(err){ console.log(err); camStage = 'błąd modelu'; $('status').textContent = 'Model się nie wczytał: ' + why(err); }
 });
 $('goNo').addEventListener('click', async () => {
   try{ if(window.DeviceOrientationEvent?.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch(e){}
-  $('start').classList.add('hidden'); $('dirBtn').style.display = 'block'; hint('Przeciągnij palcem albo przechyl telefon');
+  $('start').classList.add('hidden'); $('dirBtn').style.display = 'block';
+  hint('Dotknij i przytrzymaj ekran, żeby sypnąć karmę. Przechyl telefon, żeby zmienić perspektywę.');
 });
-$('dirBtn').addEventListener('click', () => { dir = -dir; $('dirBtn').textContent = dir < 0 ? '⇄ kierunek' : '⇄ okno fizyczne'; });
-$('pv').addEventListener('click', () => { showPv = !showPv; $('pv').style.opacity = showPv ? 1 : .25; });
+$('dirBtn').addEventListener('click', () => { dir = -dir; $('dirBtn').textContent = dir > 0 ? '⇄ kierunek' : '⇄ odwrócony'; });
 }
 </script>
 </body>
